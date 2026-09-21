@@ -29,6 +29,8 @@ const keys = new Set();
 const storageKey = 'atelier-apartment-demo-views-v1';
 let views = structuredClone(defaults);
 let index = 0, ready = false, playing = false, tourClock = 0, changing = false;
+let lastInteract = performance.now();
+const IDLE_RESUME_MS = 10000;
 let dragging = false, previousPointer = null, savedNotice = '';
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const coarsePointer = matchMedia('(pointer:coarse)').matches;
@@ -58,7 +60,6 @@ const ICONS = {
   arrow: '<svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 11.5 11.5 4.5M6 4.5h5.5V10"/></svg>',
   exit: '<svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M11.5 4.5 4.5 11.5M10 11.5H4.5V6"/></svg>',
   play: '<svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.2v9.6L12.5 8Z" fill="currentColor" stroke="none"/></svg>',
-  pause: '<svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 3.5v9M10.5 3.5v9"/></svg>',
 };
 function renderViews() {
   $('view-list').replaceChildren();
@@ -120,7 +121,7 @@ function renderSpaceMarkers() {
 }
 function stopTour() {
   playing = false; tourClock = 0;
-  $('play').innerHTML = `Play tour <span>${ICONS.play}</span>`;
+  lastInteract = performance.now();
   $('mode-label').textContent = controls.isLocked ? 'FREE EXPLORATION' : 'LOOK AROUND';
 }
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -214,6 +215,36 @@ function moveWithKeys(dt) {
   if (keys.has('KeyQ')) direction.y -= 1;
   if (direction.lengthSq()) move(direction.normalize().multiplyScalar(dt * 1.65));
 }
+const stick = { active: false, id: null, cx: 0, cy: 0, x: 0, y: 0 };
+const touchVert = { up: false, down: false };
+function moveStick(clientX, clientY) {
+  const radius = 44;
+  let dx = clientX - stick.cx, dy = clientY - stick.cy;
+  const len = Math.hypot(dx, dy);
+  if (len > radius) { dx = (dx / len) * radius; dy = (dy / len) * radius; }
+  stick.x = dx / radius; stick.y = dy / radius;
+  $('stick-nub').style.transform = `translate(${dx}px,${dy}px)`;
+}
+function endStick(event) {
+  if (!stick.active || (event && event.pointerId !== stick.id)) return;
+  stick.active = false; stick.x = 0; stick.y = 0;
+  $('stick-nub').style.transform = 'translate(0px,0px)';
+}
+function moveWithTouch(dt) {
+  let x = stick.active ? stick.x : 0, y = stick.active ? stick.y : 0;
+  if (Math.hypot(x, y) < 0.12) { x = 0; y = 0; }
+  if (!x && !y && !touchVert.up && !touchVert.down) return;
+  const forward = camera.getWorldDirection(new THREE.Vector3()); forward.y = 0;
+  if (forward.lengthSq() < 1e-6) forward.set(0, 0, -1);
+  forward.normalize();
+  const right = new THREE.Vector3().crossVectors(forward, camera.up).normalize();
+  const direction = new THREE.Vector3();
+  direction.addScaledVector(forward, -y);
+  direction.addScaledVector(right, x);
+  if (touchVert.up) direction.y += 1;
+  if (touchVert.down) direction.y -= 1;
+  if (direction.lengthSq()) move(direction.normalize().multiplyScalar(dt * 1.65));
+}
 function updateMap() {
   const forward = camera.getWorldDirection(new THREE.Vector3());
   const angle = THREE.MathUtils.radToDeg(Math.atan2(forward.x, -forward.z));
@@ -278,10 +309,12 @@ new GLTFLoader().load('/models/apartment-demo.glb', async (gltf) => {
     if (object.material.map) object.material.map.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
   });
   makePlan(); ready = true;
-  for (const id of ['reset', 'walk', 'previous', 'next', 'play', 'save-view', 'export-views']) $(id).disabled = false;
+  for (const id of ['reset', 'walk', 'previous', 'next', 'save-view', 'export-views']) $(id).disabled = false;
   await goToView(0, true);
   $('loading').hidden = true;
-  notify('Explore freely through walls and doors. W A S D to move · E up · Q down. Select a space to return to eye level.');
+  playing = true; tourClock = 0; lastInteract = performance.now();
+  $('mode-label').textContent = 'GUIDED TOUR';
+  notify('The tour plays automatically. Interact at any time to take over — it resumes after ten idle seconds.');
 }, (event) => {
   const progress = event.total ? Math.round(event.loaded / event.total * 100) : 0;
   $('progress').value = progress;
@@ -321,6 +354,34 @@ canvas.addEventListener('pointermove', (event) => {
   previousPointer = [event.clientX, event.clientY];
 });
 for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) canvas.addEventListener(event, () => { dragging = false; });
+$('stick').addEventListener('pointerdown', (event) => {
+  if (!ready || stick.active) return;
+  event.preventDefault();
+  if (flight) cancelFlight();
+  if (changing) return;
+  stopTour();
+  stick.active = true; stick.id = event.pointerId;
+  const rect = $('stick').getBoundingClientRect();
+  stick.cx = rect.left + rect.width / 2; stick.cy = rect.top + rect.height / 2;
+  moveStick(event.clientX, event.clientY);
+});
+window.addEventListener('pointermove', (event) => {
+  if (!stick.active || event.pointerId !== stick.id) return;
+  moveStick(event.clientX, event.clientY);
+});
+window.addEventListener('pointerup', endStick);
+window.addEventListener('pointercancel', endStick);
+for (const [id, key] of [['touch-up', 'up'], ['touch-down', 'down']]) {
+  const button = $(id);
+  button.addEventListener('pointerdown', (event) => {
+    event.preventDefault();
+    if (!ready) return;
+    if (flight) cancelFlight();
+    if (changing) return;
+    stopTour(); touchVert[key] = true;
+  });
+  for (const type of ['pointerup', 'pointercancel', 'pointerleave']) button.addEventListener(type, () => { touchVert[key] = false; });
+}
 document.addEventListener('keydown', (event) => {
   if (event.target.matches('input,textarea') || !ready) return;
   if ((controls.isLocked || document.activeElement === canvas) && ['KeyW','KeyA','KeyS','KeyD','KeyE','KeyQ','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(event.code)) {
@@ -340,16 +401,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) { key
 $('reset').addEventListener('click', () => { stopTour(); goToView(0); });
 $('previous').addEventListener('click', () => { stopTour(); goToView(index - 1); });
 $('next').addEventListener('click', () => { stopTour(); goToView(index + 1); });
-$('play').addEventListener('click', async () => {
-  if (playing) { stopTour(); notify('Tour paused. Explore freely or select a viewpoint.'); return; }
-  cancelFlight();
-  if (changing) return;
-  if (index === views.length - 1) await goToView(0);
-  if (controls.isLocked) controls.unlock();
-  playing = true; tourClock = 0;
-  $('play').innerHTML = `Pause tour <span>${ICONS.pause}</span>`; $('mode-label').textContent = 'GUIDED TOUR';
-  notify('Guided tour playing. Pause at any time to explore.');
-});
+controls.addEventListener('change', () => { lastInteract = performance.now(); });
 function isViewerFs() { return !!document.fullscreenElement || $('viewer').classList.contains('pseudo-fullscreen'); }
 function enterPseudoFs() {
   // Fallback for browsers without element fullscreen (e.g. iPhone Safari):
@@ -427,12 +479,16 @@ renderer.setAnimationLoop((time) => {
     if (flight) flyStep(time);
     if (!changing) {
       moveWithKeys(dt);
+      moveWithTouch(dt);
+      if (dragging || keys.size || stick.active || touchVert.up || touchVert.down) lastInteract = time;
       if (playing) {
         tourClock += dt;
-        if (tourClock > 6) {
-          if (index === views.length - 1) { stopTour(); notify('Tour complete. Keep exploring or save your own perspective.'); }
-          else goToView(index + 1);
-        }
+        if (tourClock > 6) goToView(index + 1);
+      } else if (time - lastInteract > IDLE_RESUME_MS && !flight) {
+        // Ambient auto-tour: resume gliding after ten idle seconds, looping forever.
+        playing = true; tourClock = 0;
+        $('mode-label').textContent = 'GUIDED TOUR';
+        goToView(index + 1);
       }
     }
     updateMap();

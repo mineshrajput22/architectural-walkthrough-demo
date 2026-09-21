@@ -31,6 +31,7 @@ These are implementation facts or choices, not additional user-approved product 
 - `src/main.js` and `src/style.css`: rendering, navigation, map, and presentation.
 - `src/tour.json`: five default viewpoints: Main room, Kitchen & counter, Window-side room, Central passage, Entrance.
 - Guided tour, free exploration, browser-local saved viewpoints, and JSON tour import/export are present according to the current README.
+- The tour auto-plays on load and loops; any interaction pauses it and ten idle seconds resume it (Play button removed). Touch devices get a virtual joystick plus up/down buttons for free movement; drag looks around simultaneously.
 - Viewpoint changes glide the camera from point A to point B (eased position + look-target interpolation, ~1.1–2.2 s by distance, slight vertical arc; reduced-motion systems get a shorter 0.6 s level glide). WASD/drag/plan input cancels the flight. Fullscreen shows an in-viewer SPACES panel with all viewpoints and previous/next controls.
 - Current 1K interpretation: textures are 1024 × 1024; drawing buffer is 1024 pixels wide with proportional height; text and controls use native screen resolution. The distinction was explained by the assistant; keep it explicit if discussing quality.
 - `apartment__baked.glb` is the original supplied asset. `scripts/prepare_model.py` generates `public/models/apartment-demo.glb` separately.
@@ -109,6 +110,16 @@ Next contributor: inspect current source, finish/verify the active map improveme
 
 - Replaced unicode button glyphs (▶ ↗ ⛶ Ⅱ ← → ↺ ▷ ↔), which render inconsistently across devices, with inline SVG icons (`index.html` static buttons, `ICONS` map in `src/main.js` for JS-swapped labels, shared `.icon` styles in `src/style.css`).
 - Validation: `npm run build` succeeded; DOM check found 16 SVG icons and zero leftover glyphs in buttons; native mobile-fullscreen regression re-run passed.
+
+### 2026-09-21 — Touch joystick movement
+
+- Mobile had look-around but no way to move (no WASD on phones). Added a touch-only virtual joystick (forward/strafe, camera-relative, with dead zone and clamped radius) plus up/down buttons inside the viewer; drag-to-look keeps working on a second finger, so users can move and look at once. Grabs cancel flights and pause the tour like keyboard input.
+- Validation: `npm run build` succeeded; synthetic-touch check confirmed glide (4.00 → 3.04 m), full stop on release, and height rise via the up button.
+
+### 2026-09-21 — Ambient auto-tour, Play button removed
+
+- The tour now starts automatically on load and loops forever; the Play/Pause button is gone. Any interaction (look, move, space pick, free explore) pauses via `stopTour`, and ten idle seconds resume gliding (`IDLE_RESUME_MS`). Continuous activity (drag, held keys, joystick, pointer-lock look via the controls `change` event) keeps refreshing the idle timer.
+- Updated README (tour behavior, touch controls row). Validation: `npm run build` succeeded; auto-tour check confirmed self-advance on load, hold-after-interact past the dwell, and resume to the next space with GUIDED TOUR label.
 
 ### 2026-09-21 — Minesh Rajput demo attribution
 
