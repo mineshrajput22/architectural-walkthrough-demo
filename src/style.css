@@ -16,3 +16,5 @@
 .fs-item.active .number{color:#5a7050}
 .fs-row{display:flex;gap:8px}
 .fs-row button{flex:1;background:#ffffff1a;color:#fff;border:1px solid #ffffff2e;border-radius:6px;padding:9px;font-size:15px}
+
+.byline{font-size:10px;letter-spacing:.4px;color:#959f8c;margin:-18px 0 26px}

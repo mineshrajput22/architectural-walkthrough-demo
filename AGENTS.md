@@ -13,7 +13,7 @@ Read `PROJECT_CONTEXT.md` and `README.md` before changing this project. These fi
 
 ## Project constraints
 
-- This is a demo by Minesh Rajput, as confirmed by the user. Use that attribution; ATELIER, the a. mark, and its tagline were unapproved placeholders and have been removed from the UI. A separate product name, logo, and final visual identity remain undecided. Retain the original model creator credit separately.
+- Brand the demo around the product (descriptive "3D walkthrough" language), with the author kept subtle. Everywhere the name appears it must read "by Minesh Rajput" — header caption, sidebar byline, footer, page title, README — never as the hero brand. ATELIER, the a. mark, and its tagline were unapproved placeholders and stay out. Do not invent a product name, logo, or tagline; a final visual identity is undecided. Retain the original model creator credit separately.
 - Preserve the original supplied GLB; generate browser adaptations separately and retain attribution.
 - Current scope is a local, noncommercial demo. Do not infer publication approval from the eventual client-portfolio objective.
 - Preserve requested free navigation through doors and walls, with E up and Q down. Do not reintroduce collision blocking based on earlier suggestions.

@@ -16,9 +16,9 @@ This is the maintained export of project decisions and working context, not a ve
 - Improve the map so visitors can relate it to the model. This request is active; completion must be checked against the current implementation.
 - Export and maintain these instructions after changes so other AI models can continue the work.
 
-## Demo attribution confirmed; visual identity open
+## Demo attribution: subtle, product-first
 
-The user confirmed: “this will be a demo from me i.e. Minesh Rajput.” The UI now identifies Minesh Rajput in the header, page title, and demo credit. A separate product name, logo, tagline, palette, and typography have not been chosen.
+The user directed: keep the name subtle, focus the brand on the product, and everywhere the name appears use "by Minesh Rajput". The UI therefore leads with descriptive "3D walkthrough" branding (header brand, footer lead, page title) and carries "by Minesh Rajput" as a caption/byline in the header, sidebar, footer, page title, and README. A separate product name, logo, tagline, palette, and typography have not been chosen — do not invent one.
 
 Previously, the assistant introduced **ATELIER**, **a.**, and **SPACES, EXPERIENCED.** without agreement. These placeholders have been replaced. The model remains credited to Pedro Belthori; Minesh Rajput is credited for the demo.
 
@@ -27,7 +27,7 @@ Previously, the assistant introduced **ATELIER**, **a.**, and **SPACES, EXPERIEN
 These are implementation facts or choices, not additional user-approved product requirements. The original implementation task is still active; reread source files before continuing.
 
 - Vite with JavaScript and Three.js; scripts and pinned dependency versions are in `package.json`.
-- `index.html`: viewer UI, Minesh Rajput demo attribution, spaces, and author controls.
+- `index.html`: viewer UI, product-first branding with subtle "by Minesh Rajput" bylines, spaces, and author controls.
 - `src/main.js` and `src/style.css`: rendering, navigation, map, and presentation.
 - `src/tour.json`: five default viewpoints: Main room, Kitchen & counter, Window-side room, Central passage, Entrance.
 - Guided tour, free exploration, browser-local saved viewpoints, and JSON tour import/export are present according to the current README.
@@ -82,6 +82,17 @@ Next contributor: inspect current source, finish/verify the active map improveme
 - The smooth flight measured correctly in a headless-Chromium check (page-side 1461 ms for a ~6.7 m hop, gradual intermediate positions), so the reported instant jump pointed at the reduced-motion path, which jumped instantly. It now plays a short 0.6 s level glide instead of a cut; the initial load still jumps directly to the first space.
 - Validation: `npm run build` succeeded; Playwright timing re-run gives ~1415 ms normal and ~585 ms reduced-motion glides. Manual desktop-browser check still open.
 - Outstanding: user to hard-refresh and confirm flight feel on their laptop.
+
+### 2026-09-21 — README rewritten as project showcase
+
+- Rewrote `README.md` so GitHub visitors understand the work: what the demo does, controls table, how it is built (file-by-file), rendering/asset notes, status and limits, and attribution. Verified the new threejs.org link resolves.
+- Validation: documentation-only edit — content and link check, no rebuild. Pushed to `https://github.com/mineshrajput22/architectural-walkthrough-demo` (`main`, commit `c50128f` plus this change unpushed).
+- Outstanding: push this README update to GitHub.
+
+### 2026-09-21 — Subtle product-first attribution
+
+- User correction: the name must stay subtle with the brand focused on the product, reading "by Minesh Rajput" everywhere it appears. Header brand, page title, and footer now lead with "3D walkthrough" language; the name moved to captions/bylines (header caption, new sidebar byline, footer, title, README).
+- Updated `AGENTS.md` contributor instructions to match. Validation: `npm run build` succeeded; headless-Chromium check confirmed the new title/brand/byline/footer text, zero header overflow at 1440 px, and the fullscreen panel stays hidden outside fullscreen.
 
 ### 2026-09-21 — Minesh Rajput demo attribution
 
