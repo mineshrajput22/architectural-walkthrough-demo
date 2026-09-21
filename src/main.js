@@ -12,7 +12,7 @@ const camera = new THREE.PerspectiveCamera(65, 1, 0.05, 100);
 camera.rotation.order = 'YXZ';
 let renderer;
 try {
-  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, stencil: false, powerPreference: 'high-performance' });
 } catch (error) {
   $('loading').querySelector('h2').textContent = '3D rendering is unavailable';
   $('loading-text').textContent = 'Open this demo in a browser with WebGL 2 and hardware acceleration enabled.';
@@ -30,7 +30,7 @@ const storageKey = 'atelier-apartment-demo-views-v1';
 let views = structuredClone(defaults);
 let index = 0, ready = false, playing = false, tourClock = 0, changing = false;
 let lastInteract = performance.now();
-const IDLE_RESUME_MS = 10000;
+const IDLE_RESUME_MS = 5000;
 let dragging = false, previousPointer = null, savedNotice = '';
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const coarsePointer = matchMedia('(pointer:coarse)').matches;
@@ -201,9 +201,12 @@ async function goToView(nextIndex, instant = false) {
 }
 function move(delta) {
   // Deliberately unrestricted: inspection can pass through all scene geometry.
+  // Coarse-pointer (mobile) viewers stay locked to the default eye level.
+  if (coarsePointer) delta.y = 0;
   camera.position.add(delta);
 }
 function moveWithKeys(dt) {
+  if (!keys.size) return;
   const forward = camera.getWorldDirection(new THREE.Vector3()); forward.y = 0; forward.normalize();
   const right = new THREE.Vector3().crossVectors(forward, camera.up).normalize();
   const direction = new THREE.Vector3();
@@ -216,7 +219,6 @@ function moveWithKeys(dt) {
   if (direction.lengthSq()) move(direction.normalize().multiplyScalar(dt * 1.65));
 }
 const stick = { active: false, id: null, cx: 0, cy: 0, x: 0, y: 0 };
-const touchVert = { up: false, down: false };
 function moveStick(clientX, clientY) {
   const radius = 44;
   let dx = clientX - stick.cx, dy = clientY - stick.cy;
@@ -233,7 +235,7 @@ function endStick(event) {
 function moveWithTouch(dt) {
   let x = stick.active ? stick.x : 0, y = stick.active ? stick.y : 0;
   if (Math.hypot(x, y) < 0.12) { x = 0; y = 0; }
-  if (!x && !y && !touchVert.up && !touchVert.down) return;
+  if (!x && !y) return;
   const forward = camera.getWorldDirection(new THREE.Vector3()); forward.y = 0;
   if (forward.lengthSq() < 1e-6) forward.set(0, 0, -1);
   forward.normalize();
@@ -241,18 +243,25 @@ function moveWithTouch(dt) {
   const direction = new THREE.Vector3();
   direction.addScaledVector(forward, -y);
   direction.addScaledVector(right, x);
-  if (touchVert.up) direction.y += 1;
-  if (touchVert.down) direction.y -= 1;
   if (direction.lengthSq()) move(direction.normalize().multiplyScalar(dt * 1.65));
 }
+const mapVector = new THREE.Vector3();
+const lastMapState = { x: Infinity, y: Infinity, z: Infinity, angle: Infinity };
 function updateMap() {
-  const forward = camera.getWorldDirection(new THREE.Vector3());
-  const angle = THREE.MathUtils.radToDeg(Math.atan2(forward.x, -forward.z));
+  camera.getWorldDirection(mapVector);
+  const angle = THREE.MathUtils.radToDeg(Math.atan2(mapVector.x, -mapVector.z));
   const x = THREE.MathUtils.clamp(camera.position.x, -10.1, 7.7);
   const z = THREE.MathUtils.clamp(camera.position.z, -1.9, 5.6);
+  const y = camera.position.y;
+  // Skip DOM writes when the camera is effectively static: the marker, labels,
+  // and readouts are already showing these values. Thresholds sit far below
+  // visible precision (marker radius .19 m, readouts to 2 decimals).
+  if (Math.abs(x - lastMapState.x) < 0.001 && Math.abs(z - lastMapState.z) < 0.001
+    && Math.abs(y - lastMapState.y) < 0.001 && Math.abs(angle - lastMapState.angle) < 0.05) return;
+  lastMapState.x = x; lastMapState.y = y; lastMapState.z = z; lastMapState.angle = angle;
   const outside = x !== camera.position.x || z !== camera.position.z;
   $('map-position').setAttribute('transform', `translate(${x} ${z}) rotate(${angle})`);
-  $('map-location').textContent = `${outside ? 'Outside plan' : Math.abs(camera.position.y - 1.65) < .03 ? 'Eye level' : 'Free height'} · ${camera.position.y.toFixed(2)} m`;
+  $('map-location').textContent = `${outside ? 'Outside plan' : Math.abs(y - 1.65) < .03 ? 'Eye level' : 'Free height'} · ${y.toFixed(2)} m`;
   $('camera-position').textContent = `Camera: ${camera.position.toArray().map((v) => v.toFixed(2)).join(' / ')} m`;
 }
 function makePlan() {
@@ -314,7 +323,7 @@ new GLTFLoader().load('/models/apartment-demo.glb', async (gltf) => {
   $('loading').hidden = true;
   playing = true; tourClock = 0; lastInteract = performance.now();
   $('mode-label').textContent = 'GUIDED TOUR';
-  notify('The tour plays automatically. Interact at any time to take over — it resumes after ten idle seconds.');
+  notify('The tour plays automatically. Interact at any time to take over — it resumes after five idle seconds.');
 }, (event) => {
   const progress = event.total ? Math.round(event.loaded / event.total * 100) : 0;
   $('progress').value = progress;
@@ -371,17 +380,6 @@ window.addEventListener('pointermove', (event) => {
 });
 window.addEventListener('pointerup', endStick);
 window.addEventListener('pointercancel', endStick);
-for (const [id, key] of [['touch-up', 'up'], ['touch-down', 'down']]) {
-  const button = $(id);
-  button.addEventListener('pointerdown', (event) => {
-    event.preventDefault();
-    if (!ready) return;
-    if (flight) cancelFlight();
-    if (changing) return;
-    stopTour(); touchVert[key] = true;
-  });
-  for (const type of ['pointerup', 'pointercancel', 'pointerleave']) button.addEventListener(type, () => { touchVert[key] = false; });
-}
 document.addEventListener('keydown', (event) => {
   if (event.target.matches('input,textarea') || !ready) return;
   if ((controls.isLocked || document.activeElement === canvas) && ['KeyW','KeyA','KeyS','KeyD','KeyE','KeyQ','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(event.code)) {
@@ -480,12 +478,12 @@ renderer.setAnimationLoop((time) => {
     if (!changing) {
       moveWithKeys(dt);
       moveWithTouch(dt);
-      if (dragging || keys.size || stick.active || touchVert.up || touchVert.down) lastInteract = time;
+      if (dragging || keys.size || stick.active) lastInteract = time;
       if (playing) {
         tourClock += dt;
-        if (tourClock > 6) goToView(index + 1);
+        if (tourClock > 4) goToView(index + 1);
       } else if (time - lastInteract > IDLE_RESUME_MS && !flight) {
-        // Ambient auto-tour: resume gliding after ten idle seconds, looping forever.
+        // Ambient auto-tour: resume gliding after five idle seconds, looping forever.
         playing = true; tourClock = 0;
         $('mode-label').textContent = 'GUIDED TOUR';
         goToView(index + 1);

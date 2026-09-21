@@ -11,7 +11,7 @@ AI contributors: read [AGENTS.md](AGENTS.md) and the maintained [project decisio
 - **Explore Spaces** — five curated viewpoints (Main room, Kitchen & counter, Window-side room, Central passage, Entrance). Selecting one **glides the camera smoothly from point A to point B** (eased ~1–2 s flight with a gentle arc) instead of jumping. Reduced-motion systems get a shorter level glide.
 - **Free exploration** — drag to look, `W A S D` to move, `E` up / `Q` down. Movement passes freely through doors, walls, ceilings, and floors, so nothing blocks inspection.
 - **Fullscreen spaces panel** — entering fullscreen (`⛶`) reveals a SPACES panel inside the viewer with every viewpoint plus previous/next controls, so visitors can navigate without leaving fullscreen. On browsers without element fullscreen (e.g. iPhone Safari) the viewer expands to fill the screen instead. On touch devices the panel auto-hides while navigating (tap **Spaces** to bring it back) so the view keeps full real estate.
-- **Guided tour** — plays automatically on load and loops through every viewpoint (six seconds each, dwell starts after arrival). Touching anything pauses it; after ten idle seconds it resumes gliding on its own.
+- **Guided tour** — plays automatically on load and loops through every viewpoint (four seconds each, dwell starts after arrival). Touching anything pauses it; after five idle seconds it resumes gliding on its own.
 - **Live apartment plan** — a top-down map built from actual wall/window/door geometry with room labels and numbered markers matching Explore Spaces. The orange marker shows camera position and viewing direction; click a marker to jump to that space, or click the plan to move there at 1.65 m eye level.
 - **Curate this walkthrough** — name and save the current camera view (persisted in browser local storage, up to 30 views), export/import the tour as JSON, and remove views.
 
@@ -41,8 +41,8 @@ This is a static frontend-only build, deployed as a noncommercial demo on Cloudf
 |---|---|
 | Drag / mouse (pointer-lock) | Look around |
 | `W A S D` / arrows | Move horizontally |
-| `E` / `Q` | Rise / descend |
-| Touch joystick + up/down buttons (touch devices) | Glide and change height |
+| `E` / `Q` | Rise / descend (desktop; touch stays at eye level) |
+| Touch joystick (touch devices, fullscreen only) | Glide horizontally at 1.65 m eye level |
 | `Esc` | Release mouse capture |
 | Space buttons, map markers, `←` `→` | Glide to a viewpoint |
 | Fullscreen SPACES panel | Navigate while fullscreen |
@@ -64,10 +64,11 @@ This is a static frontend-only build, deployed as a noncommercial demo on Cloudf
 - The drawing buffer is 1024 pixels wide (height follows the panel aspect ratio); UI renders at native screen resolution. Texture resolution and viewer resolution are independent.
 - The sample uses legacy specular/glossiness materials, adapted by the preparation script to supported unlit materials (baked look, alpha and attribution retained). This is a sample-specific adaptation, not a general PBR pipeline. ACES tone mapping at exposure 2 lifts the dark baked textures.
 - Baked lighting cannot respond dynamically to moved lights or objects. This sparsely furnished sample does not validate the performance or material quality of a densely furnished client project.
+- Load and frame-cost notes: the GLB is preloaded (`as="fetch"`) so it downloads in parallel with the JS bundle; the renderer runs without an unused stencil buffer; keyboard movement early-outs with no keys held; plan-map DOM writes are skipped while the camera is effectively static. None of this changes textures, resolution, or motion.
 
 ## Status and limits
 
-- Local, noncommercial demo — not a published product. Hosting, deployment, and a content-management workflow are undecided.
+- Noncommercial demo, deployed as a static frontend-only build on Cloudflare Pages (free tier). A content-management workflow is undecided.
 - Final brand identity and real client portfolio content are still open.
 - Map and navigation behavior should be re-verified in a desktop browser after model or viewpoint changes (`npm run build`, then visual QA).
 

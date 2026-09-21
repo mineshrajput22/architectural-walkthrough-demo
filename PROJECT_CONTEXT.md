@@ -31,7 +31,7 @@ These are implementation facts or choices, not additional user-approved product 
 - `src/main.js` and `src/style.css`: rendering, navigation, map, and presentation.
 - `src/tour.json`: five default viewpoints: Main room, Kitchen & counter, Window-side room, Central passage, Entrance.
 - Guided tour, free exploration, browser-local saved viewpoints, and JSON tour import/export are present according to the current README.
-- The tour auto-plays on load and loops; any interaction pauses it and ten idle seconds resume it (Play button removed). Touch devices get a virtual joystick plus up/down buttons for free movement; drag looks around simultaneously.
+- The tour auto-plays on load and loops with a 4 s dwell per space (dwell starts after arrival); any interaction pauses it and five idle seconds resume it (Play button removed). Touch devices get a virtual joystick for horizontal movement, shown only in fullscreen (real or fallback) and locked to 1.65 m eye level; drag looks around simultaneously. Desktop keeps free-height `E`/`Q` movement.
 - Viewpoint changes glide the camera from point A to point B (eased position + look-target interpolation, ~1.1–2.2 s by distance, slight vertical arc; reduced-motion systems get a shorter 0.6 s level glide). WASD/drag/plan input cancels the flight. Fullscreen shows an in-viewer SPACES panel with all viewpoints and previous/next controls.
 - Current 1K interpretation: textures are 1024 × 1024; drawing buffer is 1024 pixels wide with proportional height; text and controls use native screen resolution. The distinction was explained by the assistant; keep it explicit if discussing quality.
 - `apartment__baked.glb` is the original supplied asset. `scripts/prepare_model.py` generates `public/models/apartment-demo.glb` separately.
@@ -133,3 +133,26 @@ Next contributor: inspect current source, finish/verify the active map improveme
 - Documented the Git-connected deploy flow (build `npm run build`, output `dist`) in `README.md`.
 - Validation: `npm run build` succeeded (282 ms, dist ~5.9 MB). Not yet connected in the Cloudflare dashboard or visited on a `*.pages.dev` URL — that is the concrete next step.
 - Outstanding: connect the repo in Cloudflare Pages, confirm the first deploy serves the GLB and navigation, then record the live URL.
+
+### 2026-09-21 — Faster tour pacing (4 s dwell, 5 s resume)
+
+- User request: autoplay already started on load, so only pacing changed — dwell `tourClock > 6` → `> 4` s (`src/main.js`), idle resume `IDLE_RESUME_MS` 10000 → 5000 ms, status notice and code comment reworded from "ten" to "five" idle seconds.
+- Updated README guided-tour bullet (four seconds each, five-second resume) and the snapshot line in this file.
+- Validation: `npm run build` succeeded; `node --check src/main.js` clean. Browser timing QA (dwell feel, resume feel) still needs a manual desktop check.
+- Outstanding: user to confirm pacing feels right on their laptop.
+
+### 2026-09-21 — Performance pass, quality unchanged
+
+- Audit: GPU load already minimal (4,664 tris, 15 meshes, no lights/shadows, baked unlit materials, 1024 px buffer at pixelRatio 1). Real waste was per-frame CPU: `updateMap()` wrote DOM (`setAttribute` + 2× `textContent`) and allocated vectors every frame even with a static camera; `moveWithKeys()` allocated 3 Vector3s per frame with no keys held; default stencil buffer unused; the 5.2 MB GLB request waited for the 626 KB JS bundle to parse.
+- Changes (`src/main.js`, `index.html`): `stencil: false` on the renderer; `moveWithKeys` early-out when `keys.size` is 0; `updateMap` skips DOM writes unless position/angle moved beyond sub-visible thresholds (1 mm, 0.05°) with a reused temp vector; `<link rel="preload" href="/models/apartment-demo.glb" as="fetch">` so the model downloads in parallel with the bundle. Textures, buffer resolution, tone mapping, antialiasing, flight motion, and dwell/resume timings untouched.
+- Deliberately not done: texture recompression (KTX2/WebP would change the 1K-quality pipeline and add a transcoder), JS code-splitting (single-page, no benefit), render-on-demand (auto-tour animates continuously anyway).
+- Validation: `npm run build` succeeded; `node scripts/verify-model.mjs` PASS; `node --check src/main.js` clean. No Playwright/headless browser in this environment, so visual + interaction QA is manual-only.
+- Outstanding: desktop-browser check that the map marker, eye-level readout, and camera readout still track during flights and taps, and that first paint feels faster on a cold cache.
+
+### 2026-09-21 — Mobile locked to eye level, stick is fullscreen-only
+
+- User request: touch controls appear only in fullscreen, no up/down height control on mobile, and mobile movement stays at the default 1.65 m eye level. Desktop `E`/`Q` free-height movement is unchanged.
+- Changes: removed the touch up/down buttons (`index.html`, `src/style.css` rules, `touchVert` state and listeners in `src/main.js`); `#touch-controls` now displays only under `.viewer:fullscreen` / `.viewer.pseudo-fullscreen` on coarse pointers; `move()` zeroes `delta.y` on coarse pointers so every free-movement path (stick, keys, plan) stays at eye level; flights keep their authored glide and plan clicks already land at 1.65 m.
+- Updated README controls table and the snapshot line in this file.
+- Validation: `npm run build` succeeded; `node scripts/verify-model.mjs` PASS; `node --check src/main.js` clean; grep confirms zero `touchVert`/`touch-up`/`touch-down` references. No headless browser in this environment, so mobile QA is manual-only.
+- Outstanding: on a phone, confirm the stick is hidden outside fullscreen, appears in fullscreen (and iPhone fallback), moves only horizontally at 1.65 m, and drag-look still works alongside it.
