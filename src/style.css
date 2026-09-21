@@ -7,7 +7,7 @@
 .plan-card{margin-top:24px;padding:16px 12px 12px;background:#eeeee6;border:1px solid #dce0d3;border-radius:5px}.plan-card .map-heading{margin-top:0}.plan-instruction{font-size:10px;color:#849079;line-height:1.5;margin:9px 0 0}.plan-card #plan{display:block;width:100%;height:auto;min-height:145px;margin-top:12px;border:0;background:transparent;cursor:crosshair;overflow:visible}#floor-plan polygon{fill:#fafbf7;stroke:none}#plan-labels text{font-family:Arial,sans-serif;font-size:.31px;letter-spacing:.025px;fill:#909981;text-anchor:middle}.space-marker{cursor:pointer}.space-marker circle{fill:#ecf0e5;stroke:#7e916d;stroke-width:.065}.space-marker text{text-anchor:middle;font:700 .37px Arial;fill:#49623c;pointer-events:none}.space-marker.selected circle,.space-marker:hover circle{fill:#49623c;stroke:#fff}.space-marker.selected text,.space-marker:hover text{fill:#fff}.space-marker:focus{outline:none}.space-marker:focus circle{stroke:#b47446;stroke-width:.15}#map-position{pointer-events:none}.plan-legend{display:flex;justify-content:space-between;gap:8px;font-size:8px;color:#7a866e;margin-top:10px}.plan-legend span{display:flex;align-items:center;gap:5px}.plan-legend i{width:6px;height:6px;border-radius:50%;display:inline-block}.you-dot{background:#ad6037}.space-dot{background:#49623c}.map-location{border-top:1px solid #dce0d3;padding-top:9px;margin:10px 0 0;font-size:9px;color:#839075}.plan-card .map-hint{font-size:8px;letter-spacing:1px}@media(max-width:760px){.plan-card{order:3;margin:0}.plan-card #plan{max-height:210px}.author-tools{order:4}#view-list{flex-wrap:wrap}#view-list .view-item{width:auto;flex:1 1 40%}}
 
 .fs-panel{display:none}
-.viewer:fullscreen .fs-panel{display:flex;position:absolute;top:76px;right:28px;z-index:6;flex-direction:column;gap:10px;width:min(260px,70vw);max-height:calc(100% - 220px);padding:14px;background:#10160fdd;color:#eef2e6;border:1px solid #ffffff2e;border-radius:8px;backdrop-filter:blur(6px)}
+.viewer:fullscreen .fs-panel,.viewer.pseudo-fullscreen .fs-panel{display:flex;position:absolute;top:76px;right:28px;z-index:6;flex-direction:column;gap:10px;width:min(260px,70vw);max-height:calc(100% - 220px);padding:14px;background:#10160fdd;color:#eef2e6;border:1px solid #ffffff2e;border-radius:8px;backdrop-filter:blur(6px)}
 .fs-heading{display:flex;justify-content:space-between;font-size:10px;letter-spacing:1.6px;color:#cfd8c2}
 #fs-list{display:flex;flex-direction:column;gap:6px;overflow:auto}
 .fs-item{display:flex;gap:10px;align-items:center;text-align:left;background:#ffffff14;color:#eef2e6;border:1px solid transparent;border-radius:6px;padding:10px 12px;font-size:12px}
@@ -21,6 +21,20 @@
 
 #fs-toggle{display:none}
 @media (pointer:coarse){
-.viewer:fullscreen #fs-toggle{display:block;position:absolute;top:14px;right:14px;z-index:7;background:#10160fdd;color:#eef2e6;border:1px solid #ffffff2e;border-radius:20px;padding:10px 16px;font-size:11px;letter-spacing:1.2px}
-.viewer:fullscreen.fs-collapsed .fs-panel{display:none}
+.viewer:fullscreen #fs-toggle,.viewer.pseudo-fullscreen #fs-toggle{display:block;position:absolute;top:70px;right:28px;z-index:7;background:#10160fdd;color:#eef2e6;border:1px solid #ffffff2e;border-radius:20px;padding:10px 16px;font-size:11px;letter-spacing:1.2px}
+.viewer:fullscreen.fs-collapsed .fs-panel,.viewer.pseudo-fullscreen.fs-collapsed .fs-panel{display:none}
 }
+
+.viewer.pseudo-fullscreen{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;border-radius:0;z-index:50}
+
+.icon{width:1em;height:1em;flex:none;vertical-align:-0.12em;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.viewer-actions button{display:grid;place-items:center}
+.viewer-actions .icon{width:18px;height:18px}
+.tour-icon{display:inline-grid;place-items:center}
+.tour-icon .icon{width:18px;height:18px}
+.tour-controls .icon{width:16px;height:16px}
+.view-item .arrow .icon{width:12px;height:12px}
+.small-mark{display:inline-grid;place-items:center}
+.small-mark .icon{width:14px;height:14px}
+.mouse-icon .icon{width:15px;height:15px}
+.fs-row .icon{width:15px;height:15px}

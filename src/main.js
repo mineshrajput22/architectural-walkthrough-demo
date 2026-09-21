@@ -54,6 +54,12 @@ function persist() {
   try { localStorage.setItem(storageKey, JSON.stringify(views)); savedNotice = 'Saved in this browser.'; }
   catch { savedNotice = 'Browser storage is unavailable. Export your tour to keep it.'; }
 }
+const ICONS = {
+  arrow: '<svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 11.5 11.5 4.5M6 4.5h5.5V10"/></svg>',
+  exit: '<svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M11.5 4.5 4.5 11.5M10 11.5H4.5V6"/></svg>',
+  play: '<svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.2v9.6L12.5 8Z" fill="currentColor" stroke="none"/></svg>',
+  pause: '<svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 3.5v9M10.5 3.5v9"/></svg>',
+};
 function renderViews() {
   $('view-list').replaceChildren();
   views.forEach((view, i) => {
@@ -63,7 +69,7 @@ function renderViews() {
     button.disabled = !ready;
     const number = document.createElement('span'); number.className = 'number'; number.textContent = String(i + 1).padStart(2, '0');
     const title = document.createElement('span'); title.textContent = view.title;
-    const arrow = document.createElement('span'); arrow.className = 'arrow'; arrow.textContent = '↗';
+    const arrow = document.createElement('span'); arrow.className = 'arrow'; arrow.innerHTML = ICONS.arrow;
     button.append(number, title, arrow);
     button.addEventListener('click', () => { stopTour(); goToView(i); });
     $('view-list').append(button);
@@ -85,7 +91,7 @@ function renderFsList() {
     const number = document.createElement('span'); number.className = 'number'; number.textContent = String(i + 1).padStart(2, '0');
     const title = document.createElement('span'); title.textContent = view.title;
     button.append(number, title);
-    button.addEventListener('click', (event) => { event.stopPropagation(); stopTour(); goToView(i); if (coarsePointer && document.fullscreenElement) setFsPanel(true); });
+    button.addEventListener('click', (event) => { event.stopPropagation(); stopTour(); goToView(i); if (coarsePointer && isViewerFs()) setFsPanel(true); });
     $('fs-list').append(button);
   });
   if ($('fs-count')) $('fs-count').textContent = `${String(index + 1).padStart(2, '0')} / ${String(views.length).padStart(2, '0')}`;
@@ -114,7 +120,7 @@ function renderSpaceMarkers() {
 }
 function stopTour() {
   playing = false; tourClock = 0;
-  $('play').innerHTML = 'Play tour <span>▶</span>';
+  $('play').innerHTML = `Play tour <span>${ICONS.play}</span>`;
   $('mode-label').textContent = controls.isLocked ? 'FREE EXPLORATION' : 'LOOK AROUND';
 }
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -297,14 +303,14 @@ $('walk').addEventListener('click', () => {
   } catch { notify('Drag to look · W A S D to move · E up · Q down.'); }
 });
 document.addEventListener('pointerlockerror', () => notify('Drag to look · W A S D to move · E up · Q down. Mouse capture is unavailable here.'));
-controls.addEventListener('lock', () => { $('mode-label').textContent = 'FREE EXPLORATION'; $('walk').innerHTML = 'Exit exploration <span>↙</span>'; $('crosshair').hidden = false; notify('W A S D to move · E up · Q down · mouse to look · Esc to release. Walls and doors do not block movement.'); });
-controls.addEventListener('unlock', () => { keys.clear(); $('mode-label').textContent = playing ? 'GUIDED TOUR' : 'LOOK AROUND'; $('walk').innerHTML = 'Explore freely <span>↗</span>'; $('crosshair').hidden = true; });
+controls.addEventListener('lock', () => { $('mode-label').textContent = 'FREE EXPLORATION'; $('walk').innerHTML = `Exit exploration <span>${ICONS.exit}</span>`; $('crosshair').hidden = false; notify('W A S D to move · E up · Q down · mouse to look · Esc to release. Walls and doors do not block movement.'); });
+controls.addEventListener('unlock', () => { keys.clear(); $('mode-label').textContent = playing ? 'GUIDED TOUR' : 'LOOK AROUND'; $('walk').innerHTML = `Explore freely <span>${ICONS.arrow}</span>`; $('crosshair').hidden = true; });
 canvas.addEventListener('pointerdown', (event) => {
   if (!ready || controls.isLocked) return;
   if (flight) cancelFlight();
   if (changing) return;
   // Touch navigation in fullscreen gets full real estate: hide the spaces menu while moving.
-  if (event.pointerType === 'touch' && coarsePointer && document.fullscreenElement) setFsPanel(true);
+  if (event.pointerType === 'touch' && coarsePointer && isViewerFs()) setFsPanel(true);
   stopTour(); dragging = true; previousPointer = [event.clientX, event.clientY];
   canvas.setPointerCapture(event.pointerId); canvas.focus();
 });
@@ -341,16 +347,34 @@ $('play').addEventListener('click', async () => {
   if (index === views.length - 1) await goToView(0);
   if (controls.isLocked) controls.unlock();
   playing = true; tourClock = 0;
-  $('play').innerHTML = 'Pause tour <span>Ⅱ</span>'; $('mode-label').textContent = 'GUIDED TOUR';
+  $('play').innerHTML = `Pause tour <span>${ICONS.pause}</span>`; $('mode-label').textContent = 'GUIDED TOUR';
   notify('Guided tour playing. Pause at any time to explore.');
 });
+function isViewerFs() { return !!document.fullscreenElement || $('viewer').classList.contains('pseudo-fullscreen'); }
+function enterPseudoFs() {
+  // Fallback for browsers without element fullscreen (e.g. iPhone Safari):
+  // expand the viewer to fill the screen with CSS instead.
+  $('viewer').classList.add('pseudo-fullscreen');
+  document.body.style.overflow = 'hidden';
+  resize();
+}
+function exitPseudoFs() {
+  $('viewer').classList.remove('pseudo-fullscreen');
+  document.body.style.overflow = '';
+  resize();
+}
 $('fullscreen').addEventListener('click', async () => {
-  try { if (document.fullscreenElement) await document.exitFullscreen(); else await $('viewer').requestFullscreen(); }
-  catch { notify('Fullscreen is unavailable in this browser. Open the localhost link in your desktop browser.'); }
+  if (isViewerFs()) { if (document.fullscreenElement) await document.exitFullscreen(); else exitPseudoFs(); return; }
+  const request = $('viewer').requestFullscreen?.bind($('viewer')) || $('viewer').webkitRequestFullscreen?.bind($('viewer'));
+  try {
+    if (!request) throw new Error('no fullscreen api');
+    const result = request();
+    if (result?.catch) await result;
+  } catch { enterPseudoFs(); }
 });
 document.addEventListener('fullscreenchange', () => { resize(); });
-$('fs-prev').addEventListener('click', (event) => { event.stopPropagation(); stopTour(); goToView(index - 1); if (coarsePointer && document.fullscreenElement) setFsPanel(true); });
-$('fs-next').addEventListener('click', (event) => { event.stopPropagation(); stopTour(); goToView(index + 1); if (coarsePointer && document.fullscreenElement) setFsPanel(true); });
+$('fs-prev').addEventListener('click', (event) => { event.stopPropagation(); stopTour(); goToView(index - 1); if (coarsePointer && isViewerFs()) setFsPanel(true); });
+$('fs-next').addEventListener('click', (event) => { event.stopPropagation(); stopTour(); goToView(index + 1); if (coarsePointer && isViewerFs()) setFsPanel(true); });
 $('fs-toggle').addEventListener('click', (event) => { event.stopPropagation(); setFsPanel(!$('viewer').classList.contains('fs-collapsed')); });
 $('plan').addEventListener('click', (event) => {
   if (!ready) return;

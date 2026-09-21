@@ -99,6 +99,17 @@ Next contributor: inspect current source, finish/verify the active map improveme
 - On touch devices in fullscreen, the SPACES navigation panel now auto-hides when the user starts navigating by touch, and collapses again after picking a space, freeing viewing real estate. A small **Spaces** toggle (touch fullscreen only) reopens it. Desktop fullscreen behavior is unchanged.
 - Updated README behavior notes. Validation: `npm run build` succeeded; mobile-emulation check (touch, coarse pointer, real fullscreen) confirmed panel shown → hidden on touch nav → reopened via toggle → hidden again after space selection, with navigation working.
 
+### 2026-09-21 — Fullscreen fallback for phones without element fullscreen
+
+- The fullscreen button did nothing on browsers without element-fullscreen support (e.g. iPhone Safari: no Fullscreen API on generic elements), which also locked out the spaces panel. Tapping fullscreen there now expands the viewer to fill the screen via CSS (`pseudo-fullscreen`: fixed, `100dvh`, body scroll locked) with the same spaces panel, toggle, and auto-hide behavior; tapping the button again exits and restores scrolling.
+- Fixed a real overlap the fallback test caught: the touch **Spaces** toggle covered the viewer action buttons, so it moved below them.
+- Validation: `npm run build` succeeded; emulated no-fullscreen-API phone check confirmed fallback engage → panel → touch hide → toggle reopen → space pick → clean exit with scroll restored.
+
+### 2026-09-21 — Inline SVG control icons
+
+- Replaced unicode button glyphs (▶ ↗ ⛶ Ⅱ ← → ↺ ▷ ↔), which render inconsistently across devices, with inline SVG icons (`index.html` static buttons, `ICONS` map in `src/main.js` for JS-swapped labels, shared `.icon` styles in `src/style.css`).
+- Validation: `npm run build` succeeded; DOM check found 16 SVG icons and zero leftover glyphs in buttons; native mobile-fullscreen regression re-run passed.
+
 ### 2026-09-21 — Minesh Rajput demo attribution
 
 - Recorded the user-confirmed demo creator and replaced Atelier branding in the header, browser title, loading mark, and demo footer. Preserved model attribution.
