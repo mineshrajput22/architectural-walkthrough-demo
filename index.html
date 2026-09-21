@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f4f3ee"><title>Minesh Rajput — 3D walkthrough demo</title></head>
+<body>
+  <header class="header"><a class="brand" href="/" aria-label="Minesh Rajput demo home">MINESH RAJPUT<span class="brand-caption">3D WALKTHROUGH DEMO</span></a><span class="header-note">INTERACTIVE ARCHITECTURE / VOL. 01</span><span class="demo-pill"><i></i> LOCAL DEMO</span></header>
+  <main>
+    <aside class="sidebar">
+      <div class="eyebrow">THE WALKTHROUGH COLLECTION</div><h1>A study in<br><em>light & space.</em></h1><p class="intro">Step inside. Discover the details.<br>Experience architecture at your own pace.</p>
+      <div class="project-meta"><span>01 / APARTMENT</span><span>INTERIOR STUDY</span></div>
+      <div class="section-label">EXPLORE SPACES <span id="view-count">05 SPACES</span></div><nav id="view-list" aria-label="Explore spaces"></nav>
+      <section class="plan-card" aria-label="Apartment navigation map"><div class="map-heading"><span class="section-label">APARTMENT PLAN</span><span class="map-hint">TOP VIEW</span></div><p class="plan-instruction">Choose a numbered space to jump there.</p><svg id="plan" viewBox="-10.7 -2.5 19 8.6" role="group" aria-label="Top-down apartment plan. Numbered spaces match the Explore Spaces list."><g id="floor-plan"></g><g id="plan-labels" aria-hidden="true"><text x="-7.2" y=".5">WINDOW ROOM</text><text x="-2.7" y="-.55">KITCHEN</text><text x="4.3" y=".25">MAIN ROOM</text><text x="-2.35" y="3.6">INNER ROOM</text></g><g id="space-markers"></g><g id="map-position" aria-hidden="true"><path d="M0 0 L-.65 -1.2 Q0 -1.55 .65 -1.2 Z" fill="#be7346" opacity=".25"/><path d="M0 -.6 L-.27 -.12 L.27 -.12 Z" fill="#ad6037" stroke="#fff" stroke-width=".06"/><circle r=".19" fill="#ad6037" stroke="#fff" stroke-width=".1"/></g></svg><div class="plan-legend"><span><i class="you-dot"></i> You & viewing direction</span><span><i class="space-dot"></i> Spaces</span></div><p id="map-location" class="map-location">Eye level · 1.65 m</p></section>
+      <details class="author-tools"><summary>Curate this walkthrough <span>+</span></summary><label for="view-name">Viewpoint title</label><input id="view-name" maxlength="60" placeholder="e.g. Kitchen details"><button id="save-view" class="secondary" disabled>+ Save current viewpoint</button><div class="tool-row"><button id="export-views" disabled>Export tour</button><button id="import-views">Import tour</button><button id="remove-view" disabled>Remove view</button></div><input type="file" id="tour-file" accept="application/json,.json" hidden><p>Saved in this browser. Export a backup to keep your tour.</p><p id="camera-position"></p></details>
+      <div class="sidebar-bottom"><span class="small-mark">↗</span><p>A new perspective<br>on the spaces we inhabit.</p></div>
+    </aside>
+    <section class="experience" aria-label="Interactive 3D walkthrough">
+      <div class="viewer" id="viewer"><canvas id="scene" tabindex="0" aria-label="3D apartment. Drag to look; use W A S D to move, E up and Q down."></canvas><div class="viewer-top"><span class="scene-tag"><i></i> <span id="mode-label">LOOK AROUND</span></span><div class="viewer-actions"><button id="reset" aria-label="Reset view" title="Reset view" disabled>↺</button><button id="fullscreen" aria-label="Toggle fullscreen" title="Fullscreen">⛶</button></div></div>
+        <div id="loading" class="loading"><span class="loading-mark" aria-hidden="true">↗</span><h2>Opening the apartment</h2><p id="loading-text">Preparing your perspective…</p><progress id="progress" max="100" value="0"></progress></div>
+        <div id="transition"></div><div class="crosshair" id="crosshair" hidden>+</div>
+        <div class="viewer-bottom"><div><span class="eyebrow light">YOU ARE EXPLORING</span><h2 id="current-title">The apartment</h2></div><button id="walk" class="walk-button" disabled>Explore freely <span>↗</span></button></div>
+        <div class="fs-panel" id="fs-panel" aria-label="Spaces navigation"><div class="fs-heading"><span>SPACES</span><span id="fs-count">01 / 05</span></div><nav id="fs-list" aria-label="Explore spaces in fullscreen"></nav><div class="fs-row"><button id="fs-prev" aria-label="Previous space">←</button><button id="fs-next" aria-label="Next space">→</button></div></div>
+      </div>
+      <div class="tour-bar"><div class="tour-heading"><span class="tour-icon">▷</span><div><strong>A guided perspective</strong><p>Let the architecture lead the way.</p></div></div><div class="tour-controls"><button id="previous" aria-label="Previous viewpoint" disabled>←</button><span id="tour-counter">01 / 05</span><button id="next" aria-label="Next viewpoint" disabled>→</button><button id="play" class="primary" disabled>Play tour <span>▶</span></button></div></div>
+      <div class="instructions"><span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move</span><span><span class="mouse-icon">↔</span> Drag to look</span><span><kbd>E</kbd> Up <kbd>Q</kbd> Down</span><span><kbd>Esc</kbd> Release cursor</span><span class="quality">1K TEXTURES <i></i> <span id="resolution">1K VIEW</span></span></div>
+      <div id="status" role="status" aria-live="polite">Loading the apartment…</div>
+      <footer><span>DEMO BY MINESH RAJPUT</span><span>Model by <a href="https://sketchfab.com/pedrobelthori" target="_blank" rel="noreferrer">Pedro Belthori</a> · <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noreferrer">CC BY-NC 4.0</a> · Noncommercial demo</span></footer>
+    </section>
+  </main><script type="module" src="/src/main.js"></script>
+</body></html>
