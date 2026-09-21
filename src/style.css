@@ -20,6 +20,7 @@
 .byline{font-size:10px;letter-spacing:.4px;color:#959f8c;margin:-18px 0 26px}
 
 #fs-toggle{display:none}
+#fs-toggle .icon{width:14px;height:14px}
 @media (pointer:coarse){
 .viewer:fullscreen #fs-toggle,.viewer.pseudo-fullscreen #fs-toggle{display:block;position:absolute;top:70px;right:28px;z-index:7;background:#10160fdd;color:#eef2e6;border:1px solid #ffffff2e;border-radius:20px;padding:10px 16px;font-size:11px;letter-spacing:1.2px}
 .viewer:fullscreen.fs-collapsed .fs-panel,.viewer.pseudo-fullscreen.fs-collapsed .fs-panel{display:none}
@@ -42,6 +43,7 @@
 #touch-controls{display:none}
 @media (pointer:coarse){
 .viewer:fullscreen #touch-controls,.viewer.pseudo-fullscreen #touch-controls{display:block;position:absolute;left:0;right:0;bottom:0;z-index:5;pointer-events:none}
-#stick{pointer-events:auto;position:absolute;left:18px;bottom:118px;width:112px;height:112px;border-radius:50%;background:#10160f99;border:1px solid #ffffff2e;touch-action:none}
+#stick{pointer-events:auto;position:absolute;left:18px;bottom:118px;width:112px;height:112px;border-radius:50%;background:#10160f99;border:1px solid #ffffff2e;touch-action:none;opacity:.3;transition:opacity .25s}
+#stick.active{opacity:1}
 #stick-nub{position:absolute;left:50%;top:50%;width:48px;height:48px;margin:-24px 0 0 -24px;border-radius:50%;background:#eef2e6e6}
 }

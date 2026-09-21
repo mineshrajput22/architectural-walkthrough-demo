@@ -156,3 +156,24 @@ Next contributor: inspect current source, finish/verify the active map improveme
 - Updated README controls table and the snapshot line in this file.
 - Validation: `npm run build` succeeded; `node scripts/verify-model.mjs` PASS; `node --check src/main.js` clean; grep confirms zero `touchVert`/`touch-up`/`touch-down` references. No headless browser in this environment, so mobile QA is manual-only.
 - Outstanding: on a phone, confirm the stick is hidden outside fullscreen, appears in fullscreen (and iPhone fallback), moves only horizontally at 1.65 m, and drag-look still works alongside it.
+
+### 2026-09-21 — Joystick dims to 30% when idle
+
+- User request: the mobile stick looked too opaque when untouched. It now renders at 30% opacity and fades back to full while touched (`#stick` opacity + transition in `src/style.css`, `active` class toggled in the stick grab/`endStick` handlers in `src/main.js`). Applies to the whole stick including the nub; touch-only CSS scope unchanged.
+- Updated the README controls row.
+- Validation: `npm run build` succeeded; `node --check src/main.js` clean. Visual fade timing needs a manual phone check.
+- Outstanding: confirm the dim/restore feels right in fullscreen on a phone.
+
+### 2026-09-21 — Stateful fullscreen and spaces buttons
+
+- User request: the fullscreen button should read as exit-fullscreen while active, and the Spaces toggle should become a close button while the panel is open so it can be dismissed manually.
+- Changes (`src/main.js`, `src/style.css`): new `ICONS.expand`/`compress`/`close` entries; `renderFsButton()` swaps the `#fullscreen` icon and aria-label/title on `fullscreenchange`, pseudo-fullscreen enter/exit, and startup; `setFsPanel()` now swaps the `#fs-toggle` label between "Spaces" (collapsed) and a ✕ icon (open) alongside its aria attributes; 14 px icon sizing for the toggle. Desktop behavior unchanged (toggle only renders on coarse-pointer fullscreen).
+- Updated the README fullscreen-panel bullet.
+- Validation: `npm run build` succeeded; `node scripts/verify-model.mjs` PASS; `node --check src/main.js` clean. No headless browser here, so state-swap QA is manual-only.
+- Outstanding: in desktop and phone fullscreen, confirm expand ⇄ compress icon swap plus labels, and Spaces ⇄ ✕ swap with manual dismiss/reopen.
+
+### 2026-09-21 — Mini-map "black square" diagnosed as hover tooltip
+
+- User reported a black square on the apartment plan. Verified the live plan DOM (735 painted elements, all styled: near-white floor, thin green section lines, 5 numbered markers, gray labels, orange you-marker) and a headless-Chromium render of the production build: no square; the only dense mark in that corner is the legitimate left-wall window-unit section cluster (~90 tiny frame/plastic/glass segments in a 0.12 × 1.1 m strip).
+- User confirmed the square disappears when the mouse leaves the map: it was the native hover tooltip from the marker `<title>` elements ("3. Window-side room", etc.), not plan content. No code change; titles stay for accessibility.
+- Validation: DOM audit + headless screenshots (standard and 3× zoom); no rebuild (documentation-only entry).

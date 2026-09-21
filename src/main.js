@@ -40,6 +40,9 @@ function setFsPanel(collapsed) {
   if (toggle) {
     toggle.setAttribute('aria-expanded', String(!collapsed));
     toggle.setAttribute('aria-label', collapsed ? 'Show spaces panel' : 'Hide spaces panel');
+    // Open panel shows a close affordance so it can be dismissed manually;
+    // collapsed state offers the panel back under its "Spaces" label.
+    toggle.innerHTML = collapsed ? 'Spaces' : ICONS.close;
   }
 }
 function validView(v) {
@@ -58,7 +61,10 @@ function persist() {
 }
 const ICONS = {
   arrow: '<svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 11.5 11.5 4.5M6 4.5h5.5V10"/></svg>',
+  expand: '<svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6V2.5H6M10 2.5h3.5V6M13.5 10v3.5H10M6 13.5H2.5V10"/></svg>',
   exit: '<svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M11.5 4.5 4.5 11.5M10 11.5H4.5V6"/></svg>',
+  compress: '<svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 2.5H2.5V6M10 2.5h3.5V6M2.5 10v3.5H6M10 13.5h3.5V10"/></svg>',
+  close: '<svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg>',
   play: '<svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.2v9.6L12.5 8Z" fill="currentColor" stroke="none"/></svg>',
 };
 function renderViews() {
@@ -230,6 +236,7 @@ function moveStick(clientX, clientY) {
 function endStick(event) {
   if (!stick.active || (event && event.pointerId !== stick.id)) return;
   stick.active = false; stick.x = 0; stick.y = 0;
+  $('stick').classList.remove('active');
   $('stick-nub').style.transform = 'translate(0px,0px)';
 }
 function moveWithTouch(dt) {
@@ -370,6 +377,7 @@ $('stick').addEventListener('pointerdown', (event) => {
   if (changing) return;
   stopTour();
   stick.active = true; stick.id = event.pointerId;
+  $('stick').classList.add('active');
   const rect = $('stick').getBoundingClientRect();
   stick.cx = rect.left + rect.width / 2; stick.cy = rect.top + rect.height / 2;
   moveStick(event.clientX, event.clientY);
@@ -401,17 +409,25 @@ $('previous').addEventListener('click', () => { stopTour(); goToView(index - 1);
 $('next').addEventListener('click', () => { stopTour(); goToView(index + 1); });
 controls.addEventListener('change', () => { lastInteract = performance.now(); });
 function isViewerFs() { return !!document.fullscreenElement || $('viewer').classList.contains('pseudo-fullscreen'); }
+function renderFsButton() {
+  const button = $('fullscreen');
+  if (!button) return;
+  const fs = isViewerFs();
+  button.innerHTML = fs ? ICONS.compress : ICONS.expand;
+  button.setAttribute('aria-label', fs ? 'Exit fullscreen' : 'Enter fullscreen');
+  button.setAttribute('title', fs ? 'Exit fullscreen' : 'Fullscreen');
+}
 function enterPseudoFs() {
   // Fallback for browsers without element fullscreen (e.g. iPhone Safari):
   // expand the viewer to fill the screen with CSS instead.
   $('viewer').classList.add('pseudo-fullscreen');
   document.body.style.overflow = 'hidden';
-  resize();
+  resize(); renderFsButton();
 }
 function exitPseudoFs() {
   $('viewer').classList.remove('pseudo-fullscreen');
   document.body.style.overflow = '';
-  resize();
+  resize(); renderFsButton();
 }
 $('fullscreen').addEventListener('click', async () => {
   if (isViewerFs()) { if (document.fullscreenElement) await document.exitFullscreen(); else exitPseudoFs(); return; }
@@ -422,10 +438,11 @@ $('fullscreen').addEventListener('click', async () => {
     if (result?.catch) await result;
   } catch { enterPseudoFs(); }
 });
-document.addEventListener('fullscreenchange', () => { resize(); });
+document.addEventListener('fullscreenchange', () => { resize(); renderFsButton(); });
 $('fs-prev').addEventListener('click', (event) => { event.stopPropagation(); stopTour(); goToView(index - 1); if (coarsePointer && isViewerFs()) setFsPanel(true); });
 $('fs-next').addEventListener('click', (event) => { event.stopPropagation(); stopTour(); goToView(index + 1); if (coarsePointer && isViewerFs()) setFsPanel(true); });
 $('fs-toggle').addEventListener('click', (event) => { event.stopPropagation(); setFsPanel(!$('viewer').classList.contains('fs-collapsed')); });
+setFsPanel($('viewer').classList.contains('fs-collapsed')); renderFsButton();
 $('plan').addEventListener('click', (event) => {
   if (!ready) return;
   cancelFlight();
