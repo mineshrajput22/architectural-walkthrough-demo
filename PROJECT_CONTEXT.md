@@ -45,7 +45,7 @@ The sample is Apartment | Baked by Pedro Belthori; its embedded license is CC BY
 
 - Blender as a standard preparation stage, and SketchUp/Revit handoff conversion, were recommended; they are not implemented or mandatory approved tooling.
 - Final brand identity and actual client portfolio content remain open.
-- Hosting, deployment, automated uploads, and a production content-management workflow have not been decided.
+- Hosting decision: Cloudflare Pages (free tier, noncommercial demo). Git-connected to `main`; build `npm run build`, output `dist`. `public/_headers` sets long-cache for `/assets/*` and `/models/*`. Automated uploads and a production content-management workflow remain open.
 - Performance and material quality for a densely furnished client model are unvalidated.
 - Map improvement is being handled in the implementation task. Inspect the latest source and browser result; do not overwrite that concurrent work or assume it is complete.
 
@@ -94,8 +94,21 @@ Next contributor: inspect current source, finish/verify the active map improveme
 - User correction: the name must stay subtle with the brand focused on the product, reading "by Minesh Rajput" everywhere it appears. Header brand, page title, and footer now lead with "3D walkthrough" language; the name moved to captions/bylines (header caption, new sidebar byline, footer, title, README).
 - Updated `AGENTS.md` contributor instructions to match. Validation: `npm run build` succeeded; headless-Chromium check confirmed the new title/brand/byline/footer text, zero header overflow at 1440 px, and the fullscreen panel stays hidden outside fullscreen.
 
+### 2026-09-21 — Touch fullscreen auto-hide panel
+
+- On touch devices in fullscreen, the SPACES navigation panel now auto-hides when the user starts navigating by touch, and collapses again after picking a space, freeing viewing real estate. A small **Spaces** toggle (touch fullscreen only) reopens it. Desktop fullscreen behavior is unchanged.
+- Updated README behavior notes. Validation: `npm run build` succeeded; mobile-emulation check (touch, coarse pointer, real fullscreen) confirmed panel shown → hidden on touch nav → reopened via toggle → hidden again after space selection, with navigation working.
+
 ### 2026-09-21 — Minesh Rajput demo attribution
 
 - Recorded the user-confirmed demo creator and replaced Atelier branding in the header, browser title, loading mark, and demo footer. Preserved model attribution.
 - Updated README and contributor instructions. The legacy local-storage key remains unchanged to preserve saved viewpoints.
 - Validation: pending production build and browser check.
+
+### 2026-09-21 — Cloudflare Pages hosting setup
+
+- User confirmed the demo is noncommercial and chose Cloudflare Pages (free tier) for this frontend-only Vite build.
+- Added `public/_headers` (copied to `dist/_headers`): immutable year-long cache for `/assets/*` and `/models/*`, no-cache for `/`. No redirect or base-path change needed; absolute `/models/apartment-demo.glb` and default `/` base work on `*.pages.dev` and custom domains.
+- Documented the Git-connected deploy flow (build `npm run build`, output `dist`) in `README.md`.
+- Validation: `npm run build` succeeded (282 ms, dist ~5.9 MB). Not yet connected in the Cloudflare dashboard or visited on a `*.pages.dev` URL — that is the concrete next step.
+- Outstanding: connect the repo in Cloudflare Pages, confirm the first deploy serves the GLB and navigation, then record the live URL.

@@ -31,6 +31,15 @@ let views = structuredClone(defaults);
 let index = 0, ready = false, playing = false, tourClock = 0, changing = false;
 let dragging = false, previousPointer = null, savedNotice = '';
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const coarsePointer = matchMedia('(pointer:coarse)').matches;
+function setFsPanel(collapsed) {
+  $('viewer').classList.toggle('fs-collapsed', collapsed);
+  const toggle = $('fs-toggle');
+  if (toggle) {
+    toggle.setAttribute('aria-expanded', String(!collapsed));
+    toggle.setAttribute('aria-label', collapsed ? 'Show spaces panel' : 'Hide spaces panel');
+  }
+}
 function validView(v) {
   return typeof v?.title === 'string' && v.title.trim().length > 0 && v.title.length <= 60
     && ['position', 'target'].every((key) => Array.isArray(v[key]) && v[key].length === 3 && v[key].every((n) => Number.isFinite(n) && Math.abs(n) < 100));
@@ -76,7 +85,7 @@ function renderFsList() {
     const number = document.createElement('span'); number.className = 'number'; number.textContent = String(i + 1).padStart(2, '0');
     const title = document.createElement('span'); title.textContent = view.title;
     button.append(number, title);
-    button.addEventListener('click', (event) => { event.stopPropagation(); stopTour(); goToView(i); });
+    button.addEventListener('click', (event) => { event.stopPropagation(); stopTour(); goToView(i); if (coarsePointer && document.fullscreenElement) setFsPanel(true); });
     $('fs-list').append(button);
   });
   if ($('fs-count')) $('fs-count').textContent = `${String(index + 1).padStart(2, '0')} / ${String(views.length).padStart(2, '0')}`;
@@ -294,6 +303,8 @@ canvas.addEventListener('pointerdown', (event) => {
   if (!ready || controls.isLocked) return;
   if (flight) cancelFlight();
   if (changing) return;
+  // Touch navigation in fullscreen gets full real estate: hide the spaces menu while moving.
+  if (event.pointerType === 'touch' && coarsePointer && document.fullscreenElement) setFsPanel(true);
   stopTour(); dragging = true; previousPointer = [event.clientX, event.clientY];
   canvas.setPointerCapture(event.pointerId); canvas.focus();
 });
@@ -338,8 +349,9 @@ $('fullscreen').addEventListener('click', async () => {
   catch { notify('Fullscreen is unavailable in this browser. Open the localhost link in your desktop browser.'); }
 });
 document.addEventListener('fullscreenchange', () => { resize(); });
-$('fs-prev').addEventListener('click', (event) => { event.stopPropagation(); stopTour(); goToView(index - 1); });
-$('fs-next').addEventListener('click', (event) => { event.stopPropagation(); stopTour(); goToView(index + 1); });
+$('fs-prev').addEventListener('click', (event) => { event.stopPropagation(); stopTour(); goToView(index - 1); if (coarsePointer && document.fullscreenElement) setFsPanel(true); });
+$('fs-next').addEventListener('click', (event) => { event.stopPropagation(); stopTour(); goToView(index + 1); if (coarsePointer && document.fullscreenElement) setFsPanel(true); });
+$('fs-toggle').addEventListener('click', (event) => { event.stopPropagation(); setFsPanel(!$('viewer').classList.contains('fs-collapsed')); });
 $('plan').addEventListener('click', (event) => {
   if (!ready) return;
   cancelFlight();

@@ -10,7 +10,7 @@ AI contributors: read [AGENTS.md](AGENTS.md) and the maintained [project decisio
 
 - **Explore Spaces** — five curated viewpoints (Main room, Kitchen & counter, Window-side room, Central passage, Entrance). Selecting one **glides the camera smoothly from point A to point B** (eased ~1–2 s flight with a gentle arc) instead of jumping. Reduced-motion systems get a shorter level glide.
 - **Free exploration** — drag to look, `W A S D` to move, `E` up / `Q` down. Movement passes freely through doors, walls, ceilings, and floors, so nothing blocks inspection.
-- **Fullscreen spaces panel** — entering fullscreen (`⛶`) reveals a SPACES panel inside the viewer with every viewpoint plus previous/next controls, so visitors can navigate without leaving fullscreen.
+- **Fullscreen spaces panel** — entering fullscreen (`⛶`) reveals a SPACES panel inside the viewer with every viewpoint plus previous/next controls, so visitors can navigate without leaving fullscreen. On touch devices the panel auto-hides while navigating (tap **Spaces** to bring it back) so the view keeps full real estate.
 - **Guided tour** — Play visits each viewpoint for six seconds each (dwell starts after arrival).
 - **Live apartment plan** — a top-down map built from actual wall/window/door geometry with room labels and numbered markers matching Explore Spaces. The orange marker shows camera position and viewing direction; click a marker to jump to that space, or click the plan to move there at 1.65 m eye level.
 - **Curate this walkthrough** — name and save the current camera view (persisted in browser local storage, up to 30 views), export/import the tour as JSON, and remove views.
@@ -23,6 +23,17 @@ npm run dev
 ```
 
 Open the localhost URL printed by Vite. `npm run build` produces a static build in `dist`; `npm run preview` checks that build locally. Nothing is deployed by these commands.
+
+## Deploy (Cloudflare Pages, free)
+
+This is a static frontend-only build, deployed as a noncommercial demo on Cloudflare Pages (unlimited bandwidth on the free tier, free SSL, global CDN).
+
+1. Commit and push `main` to GitHub.
+2. In the [Cloudflare dashboard](https://dash.cloudflare.com) go to **Workers & Pages → Create → Pages → Connect to Git** and select `architectural-walkthrough-demo`.
+3. Build settings: command `npm run build`, output directory `dist`, Node 20+.
+4. Deploy. Every push to `main` redeploys automatically; preview URLs are created for pull requests.
+
+`public/_headers` is copied to `dist/_headers` by Vite and gives Pages long-cache headers for `/assets/*` and `/models/*` while keeping `/` fresh.
 
 ## Controls
 
