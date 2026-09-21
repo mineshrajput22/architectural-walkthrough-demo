@@ -87,8 +87,7 @@ Next contributor: inspect current source, finish/verify the active map improveme
 ### 2026-09-21 — README rewritten as project showcase
 
 - Rewrote `README.md` so GitHub visitors understand the work: what the demo does, controls table, how it is built (file-by-file), rendering/asset notes, status and limits, and attribution. Verified the new threejs.org link resolves.
-- Validation: documentation-only edit — content and link check, no rebuild. Pushed to `https://github.com/mineshrajput22/architectural-walkthrough-demo` (`main`, commit `c50128f` plus this change unpushed).
-- Outstanding: push this README update to GitHub.
+- Validation: documentation-only edit — content and link check, no rebuild. All work through the ambient auto-tour change is pushed to `main` on GitHub.
 
 ### 2026-09-21 — Subtle product-first attribution
 
