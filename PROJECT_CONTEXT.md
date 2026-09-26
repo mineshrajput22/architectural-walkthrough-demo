@@ -16,6 +16,7 @@ This is the maintained export of project decisions and working context, not a ve
 - Improve the map so visitors can relate it to the model. This request is active; completion must be checked against the current implementation.
 - Export and maintain these instructions after changes so other AI models can continue the work.
 - Add the supplied apartment floor plan as a separate demo section below the existing walkthrough. It represents a different apartment. Give it an independent 3D viewer with drag rotation, scroll zoom, an angled opening view, and a button that resets to top-down.
+- After trying the PC floor plan controls, the user found drag rotation janky and approved a provisional trial that keeps drag rotation but adds gentle easing and prevents viewing the model from underneath. This is a trial, not a final control decision.
 
 ## Demo attribution: subtle, product-first
 
@@ -38,7 +39,7 @@ These are implementation facts or choices, not additional user-approved product 
 - `apartment__baked.glb` is the original supplied asset. `scripts/prepare_model.py` generates `public/models/apartment-demo.glb` separately.
 - The sample has 11 embedded 1K textures, 4,664 triangles, and 15 meshes/materials, as recorded by prior inspection and the README.
 - Legacy specular/glossiness materials are adapted to baked/unlit materials for this sample. This is not a general conversion pipeline or proof of realistic rendering for all client models.
-- A second section below the walkthrough shows `apartment_floor_plan.glb` through `src/floor-plan.js`. The original is retained; `public/models/apartment-floor-plan-demo.glb` is a byte-identical browser copy. The section loads near the viewport, starts angled, supports orbit/zoom/pan, and resets to a top-down view. Its 1024 px maximum drawing-buffer width is separate from the three embedded 1024 × 1024 textures; UI remains at screen resolution.
+- A second section below the walkthrough shows `apartment_floor_plan.glb` through `src/floor-plan.js`. The original is retained; `public/models/apartment-floor-plan-demo.glb` is a byte-identical browser copy. The section loads near the viewport, starts angled, supports orbit/zoom/pan, and resets to a top-down view. PC orbit rotation is currently eased and limited to a 60° tilt from vertical, with easing disabled for reduced-motion preferences. Its 1024 px maximum drawing-buffer width is separate from the three embedded 1024 × 1024 textures; UI remains at screen resolution.
 
 ## Asset context
 
@@ -188,3 +189,10 @@ Next contributor: inspect current source, finish/verify the active map improveme
 - Added the floor plan section, independent lazy-loaded Three.js orbit viewer, and separate SrMonteiro/CC BY 4.0 credit. Copied the source GLB byte-for-byte into `public/models/` so the original remains intact. Extended `scripts/verify-model.mjs` to check that copy and its embedded attribution. Updated README behavior, controls, assets, and attribution.
 - Validation: `npm run build` succeeded via the installed npm CLI (the shell's `npm.ps1` wrapper pointed to a missing roaming path); extended `node scripts/verify-model.mjs` passed; `node --check` passed for both JavaScript modules. Browser inspection confirmed the floor plan loads, the full model fits on desktop and a narrow viewport, drag rotates, scroll zooms, and reset returns overhead. No browser console errors were observed. Source and browser-copy SHA-256 hashes matched. The floor plan's three embedded textures were inspected at 1024 × 1024.
 - Outstanding: check two-finger touch gestures on a physical touch device; the narrow-viewport browser check did not emulate touch input.
+
+### 2026-09-26 — Floor plan PC control trial
+
+- User feedback: PC drag rotation felt janky. The user approved trying the recommended adjustment while keeping drag rotation; the desired feel remains provisional.
+- Changed `src/floor-plan.js` to use damped orbit rotation, a lower rotation speed, and a 60° maximum tilt measured from straight overhead. This prevents the camera moving under the floor plan. OrbitControls now uses the Y-up axis so its tilt limit is relative to the model's vertical axis. Reset still returns overhead. Reduced-motion preferences disable damping. Updated README behavior notes.
+- Validation: `npm run build`, `node scripts/verify-model.mjs`, and `node --check src/floor-plan.js` passed. Browser inspection confirmed the angled opening frame, drag rotation, above-model tilt limit, and overhead reset; the reset handler was verified by keyboard activation. The in-app browser's pointer-click automation did not reliably activate that button, so physical mouse-click feel still needs user feedback.
+- Outstanding: get the user's feel feedback on a PC and check two-finger gestures on a physical touch device.

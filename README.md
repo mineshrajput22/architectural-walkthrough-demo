@@ -16,7 +16,7 @@ AI contributors: read [AGENTS.md](AGENTS.md) and the maintained [project decisio
 - **Guided tour** — plays automatically on load and loops through every viewpoint (four seconds each, dwell starts after arrival). Touching anything pauses it; after five idle seconds it resumes gliding on its own.
 - **Live apartment plan** — a top-down map built from actual wall/window/door geometry with room labels and numbered markers matching Explore Spaces. The orange marker shows camera position and viewing direction; click a marker to jump to that space, or click the plan to move there at 1.65 m eye level.
 - **Curate this walkthrough** — name and save the current camera view (persisted in browser local storage, up to 30 views), export/import the tour as JSON, and remove views.
-- **Separate floor plan viewer** — a furnished 3D floor plan opens at an angled view below the walkthrough. Drag to rotate, scroll to zoom, and use **Reset to top view** for an overhead view. The second model loads only when its section approaches the screen.
+- **Separate floor plan viewer** — a furnished 3D floor plan opens at an angled view below the walkthrough. Drag to rotate with a gentle release and a tilt range that keeps the camera above the model; scroll to zoom, and use **Reset to top view** for an overhead view. Reduced-motion settings skip the drag easing. The second model loads only when its section approaches the screen.
 
 ## Run locally
 

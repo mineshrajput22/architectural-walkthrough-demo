@@ -11,7 +11,6 @@ function initialize() {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#e8ebe6');
   const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 200);
-  camera.up.set(0, 0, -1);
   let renderer;
   try {
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true, stencil: false, powerPreference: 'high-performance' });
@@ -29,11 +28,14 @@ function initialize() {
   scene.add(sun);
 
   const controls = new OrbitControls(camera, canvas);
-  controls.enableDamping = false;
+  controls.enableDamping = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+  controls.dampingFactor = .08;
+  controls.rotateSpeed = .65;
   controls.enablePan = true;
   controls.minDistance = 3;
   controls.maxDistance = 70;
-  controls.maxPolarAngle = Math.PI * .91;
+  controls.minPolarAngle = .01;
+  controls.maxPolarAngle = Math.PI / 3;
   let center = new THREE.Vector3();
   let radius = 10;
 
@@ -51,12 +53,19 @@ function initialize() {
     camera.updateProjectionMatrix();
     render();
   }
-  controls.addEventListener('change', render);
+  let animationFrame = 0;
+  controls.addEventListener('change', () => {
+    render();
+    if (!animationFrame) animationFrame = requestAnimationFrame(() => {
+      animationFrame = 0;
+      controls.update();
+    });
+  });
   new ResizeObserver(resize).observe(viewer);
 
   reset.addEventListener('click', () => {
     controls.target.copy(center);
-    camera.position.copy(center).add(new THREE.Vector3(0, radius * 2.8, 0));
+    camera.position.copy(center).add(new THREE.Vector3(0, radius * 2.8, radius * .001));
     camera.lookAt(center);
     controls.update();
     render();
