@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import floorPlanModelUrl from './models/apartment-floor-plan-demo.glb?url';
 
 const viewer = document.getElementById('floor-viewer');
 const canvas = document.getElementById('floor-scene');
@@ -32,6 +33,7 @@ function initialize() {
   controls.dampingFactor = .08;
   controls.rotateSpeed = .65;
   controls.enablePan = true;
+  controls.zoomToCursor = true;
   controls.minDistance = 3;
   controls.maxDistance = 70;
   controls.minPolarAngle = .01;
@@ -71,7 +73,7 @@ function initialize() {
     render();
   });
 
-  new GLTFLoader().load('/models/apartment-floor-plan-demo.glb', (gltf) => {
+  new GLTFLoader().load(floorPlanModelUrl, (gltf) => {
     scene.add(gltf.scene);
     const bounds = new THREE.Box3().setFromObject(gltf.scene);
     bounds.getCenter(center);
@@ -88,11 +90,4 @@ function initialize() {
   });
 }
 
-// Keep the second model out of the initial walkthrough load path.
-const observer = new IntersectionObserver((entries) => {
-  if (entries.some((entry) => entry.isIntersecting)) {
-    observer.disconnect();
-    initialize();
-  }
-}, { rootMargin: '400px' });
-observer.observe(viewer);
+initialize();

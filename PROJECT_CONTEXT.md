@@ -17,6 +17,8 @@ This is the maintained export of project decisions and working context, not a ve
 - Export and maintain these instructions after changes so other AI models can continue the work.
 - Add the supplied apartment floor plan as a separate demo section below the existing walkthrough. It represents a different apartment. Give it an independent 3D viewer with drag rotation, scroll zoom, an angled opening view, and a button that resets to top-down.
 - After trying the PC floor plan controls, the user found drag rotation janky and approved a provisional trial that keeps drag rotation but adds gentle easing and prevents viewing the model from underneath. This is a trial, not a final control decision.
+- Optimize the local demo's performance and caching while retaining the agreed laptop-first, 1K quality targets. The concrete cache and loading changes below are implementation choices, not separate user-approved product requirements.
+- In the floor plan viewer, mouse-wheel zoom should move toward the current pointer position instead of always zooming around the whole model.
 
 ## Demo attribution: subtle, product-first
 
@@ -36,10 +38,11 @@ These are implementation facts or choices, not additional user-approved product 
 - The tour auto-plays on load and loops with a 4 s dwell per space (dwell starts after arrival); any interaction pauses it and five idle seconds resume it (Play button removed). Touch devices get a virtual joystick for horizontal movement, shown only in fullscreen (real or fallback) and locked to 1.65 m eye level; drag looks around simultaneously. Desktop keeps free-height `E`/`Q` movement.
 - Viewpoint changes glide the camera from point A to point B (eased position + look-target interpolation, ~1.1–2.2 s by distance, slight vertical arc; reduced-motion systems get a shorter 0.6 s level glide). WASD/drag/plan input cancels the flight. Fullscreen shows an in-viewer SPACES panel with all viewpoints and previous/next controls.
 - Current 1K interpretation: textures are 1024 × 1024; drawing buffer is 1024 pixels wide with proportional height; text and controls use native screen resolution. The distinction was explained by the assistant; keep it explicit if discussing quality.
-- `apartment__baked.glb` is the original supplied asset. `scripts/prepare_model.py` generates `public/models/apartment-demo.glb` separately.
+- `apartment__baked.glb` is the original supplied asset. `scripts/prepare_model.py` generates `src/models/apartment-demo.glb` separately.
 - The sample has 11 embedded 1K textures, 4,664 triangles, and 15 meshes/materials, as recorded by prior inspection and the README.
 - Legacy specular/glossiness materials are adapted to baked/unlit materials for this sample. This is not a general conversion pipeline or proof of realistic rendering for all client models.
-- A second section below the walkthrough shows `apartment_floor_plan.glb` through `src/floor-plan.js`. The original is retained; `public/models/apartment-floor-plan-demo.glb` is a byte-identical browser copy. The section loads near the viewport, starts angled, supports orbit/zoom/pan, and resets to a top-down view. PC orbit rotation is currently eased and limited to a 60° tilt from vertical, with easing disabled for reduced-motion preferences. Its 1024 px maximum drawing-buffer width is separate from the three embedded 1024 × 1024 textures; UI remains at screen resolution.
+- A second section below the walkthrough shows `apartment_floor_plan.glb` through `src/floor-plan.js`. The original is retained; `src/models/apartment-floor-plan-demo.glb` is a byte-identical browser copy. The section loads near the viewport, starts angled, supports orbit/zoom/pan, uses cursor-targeted wheel zoom, and resets to a top-down view. PC orbit rotation is currently eased and limited to a 60° tilt from vertical, with easing disabled for reduced-motion preferences. Its 1024 px maximum drawing-buffer width is separate from the three embedded 1024 × 1024 textures; UI remains at screen resolution.
+- Vite imports the two browser GLBs from `src/models/` and emits content-hashed `/assets/*.glb` URLs. The walkthrough model preload in `index.html` is rewritten to the same hashed URL. `src/floor-plan.js` is dynamically imported near its section, producing a separate build chunk. The walkthrough animation loop omits WebGL draws when its viewer is offscreen or the page is hidden; camera/tour state still advances. `public/_headers` applies year-long immutable browser caching to hashed `/assets/*`, while `/` revalidates.
 
 ## Asset context
 
@@ -51,7 +54,7 @@ The second, separate apartment floor plan model is by SrMonteiro. Its embedded m
 
 - Blender as a standard preparation stage, and SketchUp/Revit handoff conversion, were recommended; they are not implemented or mandatory approved tooling.
 - Final brand identity and actual client portfolio content remain open.
-- Hosting decision: Cloudflare Pages (free tier, noncommercial demo). Git-connected to `main`; build `npm run build`, output `dist`. `public/_headers` sets long-cache for `/assets/*` and `/models/*`. Automated uploads and a production content-management workflow remain open.
+- Hosting decision: Cloudflare Pages (free tier, noncommercial demo). Git-connected to `main`; build `npm run build`, output `dist`. `public/_headers` sets long-cache for content-hashed `/assets/*` and revalidation for `/`. Automated uploads and a production content-management workflow remain open.
 - Performance and material quality for a densely furnished client model are unvalidated.
 - Map improvement is being handled in the implementation task. Inspect the latest source and browser result; do not overwrite that concurrent work or assume it is complete.
 
@@ -60,12 +63,13 @@ The second, separate apartment floor plan model is by SrMonteiro. Its embedded m
 - Earlier collision/wall-blocking suggestions were replaced by the user's explicit request to move through doors and walls.
 - Earlier below-1K wording was corrected by the user to 1K.
 - Earlier mobile-first recommendations were followed by the user's laptop-first direction.
+- The earlier implementation cached fixed `/models/*` URLs as immutable for a year. This has been replaced by content-hashed GLB URLs under `/assets/*`, with the same immutable policy applied safely to those names.
 
 ## Validation and next handoff
 
-Run instructions and verification commands are in `README.md` and `AGENTS.md`. A previous implementation update reported a successful production build, but subsequent navigation and map edits may have occurred. This documentation export does not certify the current application build or visual QA.
+Run instructions and verification commands are in `README.md` and `AGENTS.md`. The 2026-09-26 performance pass passed the production build, model verification, and local production-preview checks recorded below. It does not certify live Cloudflare response headers or device-level performance.
 
-Next contributor: inspect current source, finish/verify the active map improvement if assigned, and update this snapshot and log with the actual outcome. Preserve Minesh Rajput demo attribution; keep other visual identity choices provisional.
+Next contributor: inspect current source before editing, check live Cloudflare caching after these changes are published, and measure startup/frame time on a laptop if performance work continues. Verify the map improvement separately if assigned. Preserve Minesh Rajput demo attribution; keep other visual identity choices provisional.
 
 ## Change log
 
@@ -196,3 +200,18 @@ Next contributor: inspect current source, finish/verify the active map improveme
 - Changed `src/floor-plan.js` to use damped orbit rotation, a lower rotation speed, and a 60° maximum tilt measured from straight overhead. This prevents the camera moving under the floor plan. OrbitControls now uses the Y-up axis so its tilt limit is relative to the model's vertical axis. Reset still returns overhead. Reduced-motion preferences disable damping. Updated README behavior notes.
 - Validation: `npm run build`, `node scripts/verify-model.mjs`, and `node --check src/floor-plan.js` passed. Browser inspection confirmed the angled opening frame, drag rotation, above-model tilt limit, and overhead reset; the reset handler was verified by keyboard activation. The in-app browser's pointer-click automation did not reliably activate that button, so physical mouse-click feel still needs user feedback.
 - Outstanding: get the user's feel feedback on a PC and check two-finger gestures on a physical touch device.
+
+### 2026-09-26 — Performance and browser-cache pass
+
+- User request: optimize performance and caching without changing the agreed laptop-first, 1K quality target.
+- Moved the two browser GLBs from fixed `/models/` paths into `src/models/` so Vite emits content-hashed asset URLs. The walkthrough preload is rewritten to the same hashed URL. This makes the year-long immutable `/assets/*` browser cache safe across model updates; `/` still revalidates. The original supplied GLBs and their separate credits remain intact.
+- Deferred importing `src/floor-plan.js` until the floor section nears the viewport. The production build now has a 21.60 KB floor-viewer chunk, while the initial JS chunk fell from 651.78 KB to 631.85 KB. The walkthrough omits WebGL draws when its viewer is offscreen or the page is hidden; its camera/tour state still advances. No texture or drawing-buffer resolution was lowered.
+- Validation: `npm run build`, `node scripts/verify-model.mjs`, and JavaScript syntax checks passed. `python scripts/prepare_model.py` reproduced the exact same prepared GLB bytes. The production build emitted both hashed GLBs and a matching hashed preload. In a local production preview, the walkthrough and deferred floor viewer both rendered with no browser console errors. `dist/_headers` contains the intended asset and HTML rules.
+- Outstanding: inspect response headers and cache behavior on a real Cloudflare Pages deployment after publishing these changes; local Vite preview does not apply Pages `_headers`. Device-level startup/frame-time measurement remains open.
+
+### 2026-09-26 — Floor plan zoom follows the pointer
+
+- User decision: mouse-wheel zoom in the floor plan should move toward the detail currently under the pointer rather than always using the model center.
+- Enabled Three.js OrbitControls `zoomToCursor` in `src/floor-plan.js` and updated the on-page control hint and README. Drag rotation, tilt limits, touch controls, model assets, and the 1K quality settings are unchanged.
+- Validation: `npm run build` and `node --check src/floor-plan.js` passed. Browser check: scrolling over an off-center bedroom enlarged that area around the pointer; resetting afterward returned to the centered overhead view. No browser console errors were observed.
+- Outstanding: physical mouse feel and touch pinch behavior have not been checked on the user's devices.

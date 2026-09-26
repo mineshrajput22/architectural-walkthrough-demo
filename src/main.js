@@ -2,10 +2,18 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
 import './style.css';
-import './floor-plan.js';
+import walkthroughModelUrl from './models/apartment-demo.glb?url';
 import defaults from './tour.json';
 
 const $ = (id) => document.getElementById(id);
+const floorViewerObserver = new IntersectionObserver((entries) => {
+  if (!entries.some((entry) => entry.isIntersecting)) return;
+  floorViewerObserver.disconnect();
+  import('./floor-plan.js').catch(() => {
+    $('floor-loading').textContent = 'Could not open the floor plan viewer. Refresh to try again.';
+  });
+}, { rootMargin: '400px' });
+floorViewerObserver.observe($('floor-viewer'));
 const canvas = $('scene');
 const scene = new THREE.Scene();
 scene.background = new THREE.Color('#dfe5e3');
@@ -317,7 +325,7 @@ function resize() {
 new ResizeObserver(resize).observe($('viewer'));
 resize(); renderViews();
 
-new GLTFLoader().load('/models/apartment-demo.glb', async (gltf) => {
+new GLTFLoader().load(walkthroughModelUrl, async (gltf) => {
   scene.add(gltf.scene); gltf.scene.updateMatrixWorld(true);
   gltf.scene.traverse((object) => {
     if (!object.isMesh) return;
@@ -489,6 +497,8 @@ $('tour-file').addEventListener('change', async (event) => {
 canvas.addEventListener('webglcontextlost', (event) => { event.preventDefault(); stopTour(); notify('The graphics context was interrupted. Refresh to reload the walkthrough.'); });
 
 let previousTime = performance.now();
+let walkthroughVisible = true;
+new IntersectionObserver(([entry]) => { walkthroughVisible = entry.isIntersecting; }).observe($('viewer'));
 renderer.setAnimationLoop((time) => {
   const dt = Math.min((time - previousTime) / 1000, .05); previousTime = time;
   if (ready) {
@@ -509,5 +519,5 @@ renderer.setAnimationLoop((time) => {
     }
     updateMap();
   }
-  renderer.render(scene, camera);
+  if (walkthroughVisible && !document.hidden) renderer.render(scene, camera);
 });

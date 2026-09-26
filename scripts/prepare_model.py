@@ -35,7 +35,7 @@ encoded = json.dumps(document, separators=(',', ':')).encode()
 encoded += b' ' * ((-len(encoded)) % 4)
 chunks[0] = (0x4E4F534A, encoded)
 body = b''.join(struct.pack('<II', len(chunk), kind) + chunk for kind, chunk in chunks)
-target = root / 'public' / 'models' / 'apartment-demo.glb'
+target = root / 'src' / 'models' / 'apartment-demo.glb'
 target.parent.mkdir(parents=True, exist_ok=True)
 target.write_bytes(struct.pack('<4sII', b'glTF', 2, 12 + len(body)) + body)
 print(f'Prepared {target.name}: {target.stat().st_size:,} bytes')

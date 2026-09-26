@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { Vector3, Raycaster } from 'three';
 
-const bytes = fs.readFileSync(new URL('../public/models/apartment-demo.glb', import.meta.url));
+const bytes = fs.readFileSync(new URL('../src/models/apartment-demo.glb', import.meta.url));
 assert.equal(bytes.readUInt32LE(8), bytes.length);
 const length = bytes.readUInt32LE(12);
 const document = JSON.parse(bytes.subarray(20, 20 + length));
@@ -35,7 +35,7 @@ for (const view of views) {
 ray.set(new Vector3(30, 2.8, 30), new Vector3(0, -1, 0));
 assert.equal(ray.intersectObjects(floor).length, 0, 'Floor geometry ends at apartment bounds');
 const floorPlanSource = fs.readFileSync(new URL('../apartment_floor_plan.glb', import.meta.url));
-const floorPlanDemo = fs.readFileSync(new URL('../public/models/apartment-floor-plan-demo.glb', import.meta.url));
+const floorPlanDemo = fs.readFileSync(new URL('../src/models/apartment-floor-plan-demo.glb', import.meta.url));
 assert.ok(floorPlanDemo.equals(floorPlanSource), 'Browser floor plan must preserve the supplied GLB byte-for-byte');
 assert.equal(floorPlanDemo.readUInt32LE(8), floorPlanDemo.length);
 const floorPlanJsonLength = floorPlanDemo.readUInt32LE(12);
