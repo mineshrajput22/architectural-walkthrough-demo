@@ -34,4 +34,14 @@ for (const view of views) {
 }
 ray.set(new Vector3(30, 2.8, 30), new Vector3(0, -1, 0));
 assert.equal(ray.intersectObjects(floor).length, 0, 'Floor geometry ends at apartment bounds');
-console.log('PASS: GLB structure; eleven 1K textures; five starting viewpoints; floor geometry bounds.');
+const floorPlanSource = fs.readFileSync(new URL('../apartment_floor_plan.glb', import.meta.url));
+const floorPlanDemo = fs.readFileSync(new URL('../public/models/apartment-floor-plan-demo.glb', import.meta.url));
+assert.ok(floorPlanDemo.equals(floorPlanSource), 'Browser floor plan must preserve the supplied GLB byte-for-byte');
+assert.equal(floorPlanDemo.readUInt32LE(8), floorPlanDemo.length);
+const floorPlanJsonLength = floorPlanDemo.readUInt32LE(12);
+const floorPlanDocument = JSON.parse(floorPlanDemo.subarray(20, 20 + floorPlanJsonLength));
+assert.equal(floorPlanDocument.images.length, 3);
+assert.equal(floorPlanDocument.asset.extras.author, 'SrMonteiro (https://sketchfab.com/crispimrafael)');
+assert.match(floorPlanDocument.asset.extras.license, /CC-BY-4\.0/);
+assert.ok(floorPlanDocument.meshes.length > 0 && floorPlanDocument.accessors.some((accessor) => accessor.type === 'VEC3' && accessor.min && accessor.max));
+console.log('PASS: walkthrough GLB, eleven 1K textures, five viewpoints, floor bounds; separate floor-plan GLB and attribution.');

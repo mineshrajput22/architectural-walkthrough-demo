@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
 import './style.css';
+import './floor-plan.js';
 import defaults from './tour.json';
 
 const $ = (id) => document.getElementById(id);

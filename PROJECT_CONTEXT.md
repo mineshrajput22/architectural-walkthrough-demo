@@ -1,6 +1,6 @@
 # Architectural walkthrough: decisions and handoff
 
-Last updated: 2026-09-21
+Last updated: 2026-09-26
 
 This is the maintained export of project decisions and working context, not a verbatim chat transcript. Read `AGENTS.md` for the update requirement and `README.md` for operation and asset details.
 
@@ -15,6 +15,7 @@ This is the maintained export of project decisions and working context, not a ve
 - Provide multiple Explore Spaces destinations and allow movement through doors and walls. E moves up and Q moves down from eye level.
 - Improve the map so visitors can relate it to the model. This request is active; completion must be checked against the current implementation.
 - Export and maintain these instructions after changes so other AI models can continue the work.
+- Add the supplied apartment floor plan as a separate demo section below the existing walkthrough. It represents a different apartment. Give it an independent 3D viewer with drag rotation, scroll zoom, an angled opening view, and a button that resets to top-down.
 
 ## Demo attribution: subtle, product-first
 
@@ -37,10 +38,13 @@ These are implementation facts or choices, not additional user-approved product 
 - `apartment__baked.glb` is the original supplied asset. `scripts/prepare_model.py` generates `public/models/apartment-demo.glb` separately.
 - The sample has 11 embedded 1K textures, 4,664 triangles, and 15 meshes/materials, as recorded by prior inspection and the README.
 - Legacy specular/glossiness materials are adapted to baked/unlit materials for this sample. This is not a general conversion pipeline or proof of realistic rendering for all client models.
+- A second section below the walkthrough shows `apartment_floor_plan.glb` through `src/floor-plan.js`. The original is retained; `public/models/apartment-floor-plan-demo.glb` is a byte-identical browser copy. The section loads near the viewport, starts angled, supports orbit/zoom/pan, and resets to a top-down view. Its 1024 px maximum drawing-buffer width is separate from the three embedded 1024 × 1024 textures; UI remains at screen resolution.
 
 ## Asset context
 
 The sample is Apartment | Baked by Pedro Belthori; its embedded license is CC BY-NC 4.0. Retain attribution and the source/license links in `README.md`. The user authorized noncommercial demo use after this was disclosed. An eventual client publication requires a suitable asset and a separate publication decision.
+
+The second, separate apartment floor plan model is by SrMonteiro. Its embedded metadata names CC BY 4.0 and includes the original Sketchfab source and author links. Credit it separately from Pedro Belthori and retain those links in `README.md`.
 
 ## Recommendations and open decisions
 
@@ -177,3 +181,10 @@ Next contributor: inspect current source, finish/verify the active map improveme
 - User reported a black square on the apartment plan. Verified the live plan DOM (735 painted elements, all styled: near-white floor, thin green section lines, 5 numbered markers, gray labels, orange you-marker) and a headless-Chromium render of the production build: no square; the only dense mark in that corner is the legitimate left-wall window-unit section cluster (~90 tiny frame/plastic/glass segments in a 0.12 × 1.1 m strip).
 - User confirmed the square disappears when the mouse leaves the map: it was the native hover tooltip from the marker `<title>` elements ("3. Window-side room", etc.), not plan content. No code change; titles stay for accessibility.
 - Validation: DOM audit + headless screenshots (standard and 3× zoom); no rebuild (documentation-only entry).
+
+### 2026-09-26 — Separate apartment floor plan demo
+
+- User-confirmed decisions: the supplied floor plan represents a different apartment and belongs in a separate section below the existing walkthrough. Its own viewer starts angled, rotates by drag, zooms by scroll, and resets to a true top-down view.
+- Added the floor plan section, independent lazy-loaded Three.js orbit viewer, and separate SrMonteiro/CC BY 4.0 credit. Copied the source GLB byte-for-byte into `public/models/` so the original remains intact. Extended `scripts/verify-model.mjs` to check that copy and its embedded attribution. Updated README behavior, controls, assets, and attribution.
+- Validation: `npm run build` succeeded via the installed npm CLI (the shell's `npm.ps1` wrapper pointed to a missing roaming path); extended `node scripts/verify-model.mjs` passed; `node --check` passed for both JavaScript modules. Browser inspection confirmed the floor plan loads, the full model fits on desktop and a narrow viewport, drag rotates, scroll zooms, and reset returns overhead. No browser console errors were observed. Source and browser-copy SHA-256 hashes matched. The floor plan's three embedded textures were inspected at 1024 × 1024.
+- Outstanding: check two-finger touch gestures on a physical touch device; the narrow-viewport browser check did not emulate touch input.

@@ -4,6 +4,8 @@
 
 An interactive browser demo for exploring an apartment in 3D: glide between curated spaces, walk freely through the model, and build your own guided tours. Built with [Three.js](https://threejs.org) and Vite, aimed at showing how a civil engineer or architect could present a project online.
 
+A second, separate apartment floor plan demo appears below the walkthrough. The two models do not represent the same apartment.
+
 AI contributors: read [AGENTS.md](AGENTS.md) and the maintained [project decisions and handoff](PROJECT_CONTEXT.md) before making changes.
 
 ## What it does
@@ -14,6 +16,7 @@ AI contributors: read [AGENTS.md](AGENTS.md) and the maintained [project decisio
 - **Guided tour** — plays automatically on load and loops through every viewpoint (four seconds each, dwell starts after arrival). Touching anything pauses it; after five idle seconds it resumes gliding on its own.
 - **Live apartment plan** — a top-down map built from actual wall/window/door geometry with room labels and numbered markers matching Explore Spaces. The orange marker shows camera position and viewing direction; click a marker to jump to that space, or click the plan to move there at 1.65 m eye level.
 - **Curate this walkthrough** — name and save the current camera view (persisted in browser local storage, up to 30 views), export/import the tour as JSON, and remove views.
+- **Separate floor plan viewer** — a furnished 3D floor plan opens at an angled view below the walkthrough. Drag to rotate, scroll to zoom, and use **Reset to top view** for an overhead view. The second model loads only when its section approaches the screen.
 
 ## Run locally
 
@@ -46,6 +49,8 @@ This is a static frontend-only build, deployed as a noncommercial demo on Cloudf
 | `Esc` | Release mouse capture |
 | Space buttons, map markers, `←` `→` | Glide to a viewpoint |
 | Fullscreen SPACES panel | Navigate while fullscreen |
+| Floor plan: drag / scroll | Rotate / zoom the separate floor plan (two fingers zoom or pan on touch) |
+| Floor plan: Reset to top view | Return to the overhead framing |
 
 ## How it is built
 
@@ -55,13 +60,16 @@ This is a static frontend-only build, deployed as a noncommercial demo on Cloudf
 - All button and control icons are inline SVG (currentColor strokes), so they render consistently across devices instead of relying on unicode glyphs.
 - `src/tour.json` — the five default viewpoints (positions + look targets). Changes to the model's origin, scale, or geometry require rechecking those coordinates.
 - `scripts/prepare_model.py` (`npm run prepare:model`) — generates the browser-ready `public/models/apartment-demo.glb` from the supplied source file; the original is never modified.
-- `scripts/verify-model.mjs` (`node scripts/verify-model.mjs`) — checks prepared-model geometry, textures, and the five starting positions. Browser appearance and controls still require visual QA.
+- `scripts/verify-model.mjs` (`node scripts/verify-model.mjs`) — checks the walkthrough model and viewpoints, plus the floor plan browser copy and embedded attribution. Browser appearance and controls still require visual QA.
+- `src/floor-plan.js` — independent orbit viewer for the separate floor plan, loaded near its section; its browser asset is `public/models/apartment-floor-plan-demo.glb`, a byte-identical copy of the supplied `apartment_floor_plan.glb`.
 - `inspection/` — reference renders used while developing the plan map.
 
 ## Rendering and asset notes
 
 - The source model is 5.22 MB with 4,664 triangles, 15 meshes/materials, and 11 embedded 1024 × 1024 PNG textures.
+- The separate floor plan source is 9.18 MB with three embedded 1024 × 1024 textures. Its browser copy retains the original geometry, materials, and attribution.
 - The drawing buffer is 1024 pixels wide (height follows the panel aspect ratio); UI renders at native screen resolution. Texture resolution and viewer resolution are independent.
+- The floor plan viewer also caps its drawing buffer at 1024 pixels wide, with proportional height; its controls and text remain at native screen resolution.
 - The sample uses legacy specular/glossiness materials, adapted by the preparation script to supported unlit materials (baked look, alpha and attribution retained). This is a sample-specific adaptation, not a general PBR pipeline. ACES tone mapping at exposure 2 lifts the dark baked textures.
 - Baked lighting cannot respond dynamically to moved lights or objects. This sparsely furnished sample does not validate the performance or material quality of a densely furnished client project.
 - Load and frame-cost notes: the GLB is preloaded (`as="fetch"`) so it downloads in parallel with the JS bundle; the renderer runs without an unused stencil buffer; keyboard movement early-outs with no keys held; plan-map DOM writes are skipped while the camera is effectively static. None of this changes textures, resolution, or motion.
@@ -82,3 +90,9 @@ This is a static frontend-only build, deployed as a noncommercial demo on Cloudf
 - Demo modification: legacy materials adapted to baked/unlit rendering; original geometry and texture resolution retained.
 
 This local demo is for noncommercial evaluation. Keep the attribution with the sample.
+
+**Apartment floor plan** by **SrMonteiro** is a separate model, licensed **CC BY 4.0**. The original GLB and its browser copy are unchanged.
+
+- Original: https://sketchfab.com/3d-models/apartment-floor-plan-2e85bf66e2dd4d48b683d6843e040a2b
+- Author: https://sketchfab.com/crispimrafael
+- Embedded license: CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
