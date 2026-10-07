@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
-import './style.css';
 import walkthroughModelUrl from './models/apartment-demo.glb?url';
 import defaults from './tour.json';
 
@@ -336,6 +335,9 @@ new GLTFLoader().load(walkthroughModelUrl, async (gltf) => {
   makePlan(); ready = true;
   for (const id of ['reset', 'walk', 'previous', 'next', 'save-view', 'export-views']) $(id).disabled = false;
   await goToView(0, true);
+  // Upload textures and draw the opening viewpoint before exposing the canvas.
+  // Waiting for the animation loop leaves a blank frame beneath the overlay.
+  renderer.render(scene, camera);
   $('loading').hidden = true;
   playing = true; tourClock = 0; lastInteract = performance.now();
   $('mode-label').textContent = 'GUIDED TOUR';
@@ -410,9 +412,10 @@ document.addEventListener('keydown', (event) => {
   }
 });
 document.addEventListener('keyup', (event) => keys.delete(event.code));
-window.addEventListener('blur', () => { keys.clear(); dragging = false; stopTour(); });
+function releaseMovement() { keys.clear(); dragging = false; endStick(); stopTour(); }
+window.addEventListener('blur', releaseMovement);
 canvas.addEventListener('blur', () => keys.clear());
-document.addEventListener('visibilitychange', () => { if (document.hidden) { keys.clear(); stopTour(); } });
+document.addEventListener('visibilitychange', () => { if (document.hidden) releaseMovement(); });
 $('reset').addEventListener('click', () => { stopTour(); goToView(0); });
 $('previous').addEventListener('click', () => { stopTour(); goToView(index - 1); });
 $('next').addEventListener('click', () => { stopTour(); goToView(index + 1); });
@@ -434,6 +437,7 @@ function enterPseudoFs() {
   resize(); renderFsButton();
 }
 function exitPseudoFs() {
+  releaseMovement();
   $('viewer').classList.remove('pseudo-fullscreen');
   document.body.style.overflow = '';
   resize(); renderFsButton();
@@ -447,7 +451,7 @@ $('fullscreen').addEventListener('click', async () => {
     if (result?.catch) await result;
   } catch { enterPseudoFs(); }
 });
-document.addEventListener('fullscreenchange', () => { resize(); renderFsButton(); });
+document.addEventListener('fullscreenchange', () => { releaseMovement(); resize(); renderFsButton(); });
 $('fs-prev').addEventListener('click', (event) => { event.stopPropagation(); stopTour(); goToView(index - 1); if (coarsePointer && isViewerFs()) setFsPanel(true); });
 $('fs-next').addEventListener('click', (event) => { event.stopPropagation(); stopTour(); goToView(index + 1); if (coarsePointer && isViewerFs()) setFsPanel(true); });
 $('fs-toggle').addEventListener('click', (event) => { event.stopPropagation(); setFsPanel(!$('viewer').classList.contains('fs-collapsed')); });

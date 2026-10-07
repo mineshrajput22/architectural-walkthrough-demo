@@ -1,6 +1,6 @@
 # Architectural walkthrough: decisions and handoff
 
-Last updated: 2026-09-26
+Last updated: 2026-10-07
 
 This is the maintained export of project decisions and working context, not a verbatim chat transcript. Read `AGENTS.md` for the update requirement and `README.md` for operation and asset details.
 
@@ -19,6 +19,9 @@ This is the maintained export of project decisions and working context, not a ve
 - After trying the PC floor plan controls, the user found drag rotation janky and approved a provisional trial that keeps drag rotation but adds gentle easing and prevents viewing the model from underneath. This is a trial, not a final control decision.
 - Optimize the local demo's performance and caching while retaining the agreed laptop-first, 1K quality targets. The concrete cache and loading changes below are implementation choices, not separate user-approved product requirements.
 - In the floor plan viewer, mouse-wheel zoom should move toward the current pointer position instead of always zooming around the whole model.
+- The floor plan's drag rotation must stay centered on the apartment; the user reported that it spun off-center immediately on drag. Preserve pointer-directed zoom and the separate viewer.
+- On a phone, spreading two fingers must zoom around the midpoint between them without sliding the apartment out of frame. The user reported a wrong zoom point and unwanted sliding during pinch; this supersedes the earlier implementation choice that combined two-finger zoom with panning.
+- Fix the flicker on initial website load and check for other potentially broken behavior (2026-10-07 request).
 
 ## Demo attribution: subtle, product-first
 
@@ -31,6 +34,8 @@ Previously, the assistant introduced **ATELIER**, **a.**, and **SPACES, EXPERIEN
 These are implementation facts or choices, not additional user-approved product requirements. The original implementation task is still active; reread source files before continuing.
 
 - Vite with JavaScript and Three.js; scripts and pinned dependency versions are in `package.json`.
+- The stylesheet is linked from the HTML head so the loading shell is styled before JavaScript executes. Both viewers render the opening model frame before hiding their loading overlays. Walkthrough movement is released on lost window focus, tab hiding, and fullscreen exit so touch input cannot remain latched.
+- `scripts/verify-browser.mjs` uses the pinned Playwright development dependency against a running dev/preview server. It holds JavaScript requests to check initial styling, observes WebGL model draws at overlay removal, and exercises desktop/touch navigation, tour editing, fullscreen, and failed-model loading.
 - `index.html`: viewer UI, product-first branding with subtle "by Minesh Rajput" bylines, spaces, and author controls.
 - `src/main.js` and `src/style.css`: rendering, navigation, map, and presentation.
 - `src/tour.json`: five default viewpoints: Main room, Kitchen & counter, Window-side room, Central passage, Entrance.
@@ -41,7 +46,7 @@ These are implementation facts or choices, not additional user-approved product 
 - `apartment__baked.glb` is the original supplied asset. `scripts/prepare_model.py` generates `src/models/apartment-demo.glb` separately.
 - The sample has 11 embedded 1K textures, 4,664 triangles, and 15 meshes/materials, as recorded by prior inspection and the README.
 - Legacy specular/glossiness materials are adapted to baked/unlit materials for this sample. This is not a general conversion pipeline or proof of realistic rendering for all client models.
-- A second section below the walkthrough shows `apartment_floor_plan.glb` through `src/floor-plan.js`. The original is retained; `src/models/apartment-floor-plan-demo.glb` is a byte-identical browser copy. The section loads near the viewport, starts angled, supports orbit/zoom/pan, uses cursor-targeted wheel zoom, and resets to a top-down view. PC orbit rotation is currently eased and limited to a 60° tilt from vertical, with easing disabled for reduced-motion preferences. Its 1024 px maximum drawing-buffer width is separate from the three embedded 1024 × 1024 textures; UI remains at screen resolution.
+- A second section below the walkthrough shows `apartment_floor_plan.glb` through `src/floor-plan.js`. The original is retained; `src/models/apartment-floor-plan-demo.glb` is a byte-identical browser copy. The section loads near the viewport, starts angled, supports orbit and zoom without panning, uses cursor-targeted wheel zoom and midpoint-targeted pinch zoom, and resets to a full top-down framing with default zoom. `src/floor-orbit-controls.js` corrects the bundled OrbitControls touch midpoint from page to viewport coordinates on a scrolled page. The orthographic camera orbits around the floor footprint center so the apartment stays centered during drag. PC orbit rotation is currently eased and limited to a 60° tilt from vertical, with easing disabled for reduced-motion preferences. Orbit redraws are batched into animation frames. Its 1024 px maximum drawing-buffer width is separate from the three embedded 1024 × 1024 textures; UI remains at screen resolution.
 - Vite imports the two browser GLBs from `src/models/` and emits content-hashed `/assets/*.glb` URLs. The walkthrough model preload in `index.html` is rewritten to the same hashed URL. `src/floor-plan.js` is dynamically imported near its section, producing a separate build chunk. The walkthrough animation loop omits WebGL draws when its viewer is offscreen or the page is hidden; camera/tour state still advances. `public/_headers` applies year-long immutable browser caching to hashed `/assets/*`, while `/` revalidates.
 
 ## Asset context
@@ -69,7 +74,9 @@ The second, separate apartment floor plan model is by SrMonteiro. Its embedded m
 
 Run instructions and verification commands are in `README.md` and `AGENTS.md`. The 2026-09-26 performance pass passed the production build, model verification, and local production-preview checks recorded below. It does not certify live Cloudflare response headers or device-level performance.
 
-Next contributor: inspect current source before editing, check live Cloudflare caching after these changes are published, and measure startup/frame time on a laptop if performance work continues. Verify the map improvement separately if assigned. Preserve Minesh Rajput demo attribution; keep other visual identity choices provisional.
+Next contributor: inspect current source before editing, check live Cloudflare caching after a deployment URL is known, and measure startup/frame time on a laptop. Get the user's physical mouse feel feedback on centered floor rotation and pointer zoom, and confirm the corrected pinch behavior on a phone. Preserve Minesh Rajput demo attribution; keep other visual identity choices provisional.
+
+The 2026-10-07 startup pass also verified local dev and production-preview behavior with `scripts/verify-browser.mjs` in headless Edge, including mobile emulation. Physical-device startup and live deployment behavior still require confirmation.
 
 ## Change log
 
@@ -215,3 +222,32 @@ Next contributor: inspect current source before editing, check live Cloudflare c
 - Enabled Three.js OrbitControls `zoomToCursor` in `src/floor-plan.js` and updated the on-page control hint and README. Drag rotation, tilt limits, touch controls, model assets, and the 1K quality settings are unchanged.
 - Validation: `npm run build` and `node --check src/floor-plan.js` passed. Browser check: scrolling over an off-center bedroom enlarged that area around the pointer; resetting afterward returned to the centered overhead view. No browser console errors were observed.
 - Outstanding: physical mouse feel and touch pinch behavior have not been checked on the user's devices.
+
+### 2026-09-26 — Continued performance and navigation check
+
+- Followed up on the user's request to continue performance, floor-plan controls, and map navigation. The local Vite server had stopped; restarting it restored the existing browser tab. No application failure was found in the floor viewer's dynamic import.
+- Changed `src/floor-plan.js` to schedule at most one orbit-control redraw per animation frame, including damping updates. This avoids synchronous WebGL draws for every pointer or wheel event while retaining the existing camera limits and 1K buffer cap. Updated README rendering notes.
+- Browser checks after the change: walkthrough and floor plan loaded; floor drag rotated, pointer-position wheel input zoomed, and Reset to top view restored the overhead framing. Keyboard activation of a map marker selected its matching space; the camera marker and eye-level readout updated. The browser automation click landed on the map SVG background instead of a numbered marker, so physical marker-click behavior is still unverified in this pass. The map click code was left unchanged.
+- Validation: `npm run build`, `node scripts/verify-model.mjs`, `node --check src/floor-plan.js`, and `git diff --check` passed. A live Cloudflare Pages URL was not available from project files or public search, so response headers and real-device timing remain unverified.
+
+### 2026-10-07 — Floor plan orbit centered on apartment
+
+- User report: floor plan drag and zoom felt off-axis; they clarified that the apartment spins off-center immediately on drag. The local development server was started on an available port for live browser testing.
+- Desktop reproduction: a horizontal drag in the opening view visibly shifted the apartment's footprint across the viewer. A geometry projection probe showed the old perspective view aimed at the vertical midpoint of the full 3D bounds, about 1.15 m above the floor.
+- Switched the independent floor viewer to orthographic projection and anchored OrbitControls to the floor footprint center. Kept the angled opening, pointer-directed zoom, tilt limit, damping, and 1K buffer cap. Reset now restores zoom as well as the overhead angle. Updated README controls and rendering notes.
+- Browser validation: desktop drag kept the model near the center in the opening and overhead views; off-center scroll still zoomed toward the pointer; reset restored the full top-down framing after zoom. Narrow-viewport drag kept the model visible and centered. No browser console errors were observed. `npm run build`, `node scripts/verify-model.mjs`, and `node --check src/floor-plan.js` passed. `git diff --check` could not run because this checkout's Git reported "this operation must be run in a work tree" for `diff`, although `status` worked. A physical mouse and touch-device feel check remains open.
+
+### 2026-10-07 — Correct floor plan pinch midpoint
+
+- User correction from a phone: pinching zoomed around the wrong spot, slid the apartment, and could move it out of frame. Two-finger pan was an earlier implementation choice and is now superseded for this viewer.
+- The pinned Three.js OrbitControls uses page coordinates for a two-touch midpoint but calculates cursor zoom from the canvas viewport rectangle. Because the floor plan sits below the top of the page, the scroll offset moved the zoom focus away from the fingers. `src/floor-orbit-controls.js` converts that midpoint to viewport coordinates only for two-touch input; mouse-wheel coordinates remain unchanged. Disabled OrbitControls panning so a pinch does not simultaneously slide the model.
+- Updated the on-page control hint, canvas label, and README. Added `node scripts/verify-floor-pinch.mjs` as a focused regression check: it failed on the wrong pinch y coordinate before the fix and passed after it. `npm run build`, `node scripts/verify-model.mjs`, and JavaScript syntax checks passed. The live LAN page and updated module returned HTTP 200; browser QA showed the model loading when its section entered view, centered rotation, wheel zoom, a framed top-down reset, and no logged errors. Physical phone pinch behavior still needs confirmation.
+
+### 2026-10-07 — Startup flicker and functional regression pass
+
+- User requested an explanation/fix for initial-load flicker and a search for other broken behavior. Reproduced an unstyled first paint by holding JavaScript requests: the main layout was `block` and the loading overlay `static` until the JS-imported CSS arrived. Linked the stylesheet directly from the HTML head and removed its JS import.
+- Browser instrumentation also recorded zero model draws when the walkthrough loading overlay disappeared. The opening viewpoint now renders before reveal; the floor viewer similarly completes its opening resize/render before hiding its overlay.
+- Found and reproduced a latched mobile joystick after window blur. Shared input cleanup now stops keyboard, drag, and joystick movement on blur, tab hiding, and fullscreen changes/exits.
+- Added pinned Playwright development tooling and `scripts/verify-browser.mjs`. Before the fixes, the script failed on both startup checks, first-model-frame readiness, and joystick release. Afterward all 19 checks passed against both the development server and the production preview in headless Edge. Additional paths exercised: next-space/map navigation, E movement, viewpoint save/export/remove, invalid import preservation, native/fullscreen fallback, phone overflow, floor drag/zoom/reset input, and failed-model messages/disabled movement. No desktop page errors were observed in the successful-load flow.
+- Validation: `npm run build`, `node scripts/verify-model.mjs`, `node scripts/verify-floor-pinch.mjs`, and `git diff --check` passed. Build retains the existing >500 KB main-chunk advisory. Inspected rendered desktop walkthrough, desktop floor plan, and 390 px phone-emulation screenshots. Updated README setup/check commands and observable startup/input behavior. Preserved pre-existing floor-control and dependency changes.
+- Outstanding: confirm startup on the user's physical device and, if applicable, the deployed site; headless local checks do not certify device-specific rendering or live caching. Physical floor-plan gesture feel remains open from the prior task.
